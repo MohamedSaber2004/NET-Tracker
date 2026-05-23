@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>NET_Tracker</RootNamespace>
+    <PackageId>NetTracker.Core</PackageId>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Title>Logger</Title>
+    <Version>1.0.0</Version>
+    <Authors>Mohamed Saber</Authors>
+    <Company>Mohamed Saber</Company>
+    <Product>NET-Tracker</Product>
+    <Description>A lightweight, plug-and-play HTTP request/response tracking library for ASP.NET Core.
+Provides a built-in real-time dashboard to monitor, search, and analyze all HTTP
+transactions in your application. Supports SQL Server storage, async logging,
+automatic log retention, and full integration via a single appsettings.json config block.
+Simply add AddNetTracker() and UseNetTracker() to your Program.cs to get started.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>

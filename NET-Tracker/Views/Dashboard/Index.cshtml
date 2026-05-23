@@ -1,0 +1,2241 @@
+@{
+    ViewData["Title"] = "NET-Tracker Dashboard";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="NET-Tracker HTTP Request/Response Logger - Real-time monitoring dashboard for your ASP.NET applications" />
+    <title>NET-Tracker | HTTP Logger Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --bg-card: #1a2235;
+            --bg-card-hover: #1f2a42;
+            --accent-blue: #3b82f6;
+            --accent-cyan: #06b6d4;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-yellow: #f59e0b;
+            --accent-purple: #8b5cf6;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border: rgba(148, 163, 184, 0.1);
+            --border-accent: rgba(59, 130, 246, 0.3);
+            --glow-blue: rgba(59, 130, 246, 0.15);
+            --glow-green: rgba(16, 185, 129, 0.15);
+            --glow-red: rgba(239, 68, 68, 0.15);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background gradient */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at 20% 20%, rgba(59,130,246,0.07) 0%, transparent 60%),
+                        radial-gradient(ellipse at 80% 80%, rgba(16,185,129,0.05) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ─── SIDEBAR ─── */
+        .sidebar {
+            position: fixed;
+            left: 0; top: 0; bottom: 0;
+            width: 240px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-logo {
+            padding: 24px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .logo-text {
+            font-size: 16px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-version {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 16px 12px;
+            overflow-y: auto;
+        }
+
+        .nav-section-title {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            padding: 8px 8px 4px;
+            margin-top: 8px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            margin-bottom: 2px;
+            text-decoration: none;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: var(--glow-blue);
+            color: var(--accent-blue);
+            border: 1px solid var(--border-accent);
+        }
+
+        .nav-item-icon { font-size: 16px; width: 20px; text-align: center; }
+
+        .sidebar-footer {
+            padding: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .health-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            padding: 8px 12px;
+            background: var(--bg-card);
+            border-radius: 8px;
+        }
+
+        .health-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            box-shadow: 0 0 8px var(--accent-green);
+            animation: pulse 2s infinite;
+        }
+
+        @@keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.2); }
+        }
+
+        /* ─── MAIN LAYOUT ─── */
+        .main-content {
+            margin-left: 240px;
+            min-height: 100vh;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ─── TOPBAR ─── */
+        .topbar {
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 28px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .topbar-left h1 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .topbar-left .subtitle {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .time-range-btn {
+            padding: 6px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .time-range-btn:hover, .time-range-btn.active {
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+            background: var(--glow-blue);
+        }
+
+        .refresh-btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            background: linear-gradient(135deg, var(--accent-blue), #2563eb);
+            color: white;
+            font-size: 12px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .refresh-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(59,130,246,0.4); }
+
+        /* ─── PAGE CONTENT ─── */
+        .page-content {
+            padding: 24px 28px;
+        }
+
+        /* ─── METRIC CARDS ─── */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .metric-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: default;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            border-radius: 16px 16px 0 0;
+        }
+
+        .metric-card.blue::before { background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan)); }
+        .metric-card.green::before { background: linear-gradient(90deg, var(--accent-green), #34d399); }
+        .metric-card.red::before { background: linear-gradient(90deg, var(--accent-red), #f87171); }
+        .metric-card.purple::before { background: linear-gradient(90deg, var(--accent-purple), #a78bfa); }
+
+        .metric-card:hover {
+            border-color: var(--border-accent);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        }
+
+        .metric-icon {
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+
+        .metric-card.blue .metric-icon { background: var(--glow-blue); }
+        .metric-card.green .metric-icon { background: var(--glow-green); }
+        .metric-card.red .metric-icon { background: var(--glow-red); }
+        .metric-card.purple .metric-icon { background: rgba(139,92,246,0.15); }
+
+        .metric-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .metric-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1;
+            margin-bottom: 6px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .metric-sub {
+            font-size: 11px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .metric-sub .badge-up { color: var(--accent-green); }
+        .metric-sub .badge-down { color: var(--accent-red); }
+
+        /* ─── CHARTS ROW ─── */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        .card:hover { border-color: var(--border-accent); }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .card-subtitle {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .card-badge {
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+
+        .badge-live {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-green);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            animation: livePulse 2s infinite;
+        }
+
+        @@keyframes livePulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .chart-container { position: relative; height: 220px; }
+
+        /* ─── STATUS CODE BREAKDOWN ─── */
+        .status-breakdown {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-code-badge {
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+            padding: 3px 8px;
+            border-radius: 6px;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .status-2xx { background: rgba(16,185,129,0.15); color: var(--accent-green); }
+        .status-3xx { background: rgba(59,130,246,0.15); color: var(--accent-blue); }
+        .status-4xx { background: rgba(245,158,11,0.15); color: var(--accent-yellow); }
+        .status-5xx { background: rgba(239,68,68,0.15); color: var(--accent-red); }
+
+        .status-bar-wrap {
+            flex: 1;
+            background: rgba(255,255,255,0.05);
+            border-radius: 4px;
+            height: 6px;
+            overflow: hidden;
+        }
+
+        .status-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 1s ease;
+        }
+
+        .status-count {
+            font-size: 12px;
+            color: var(--text-secondary);
+            min-width: 40px;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* ─── TRANSACTIONS TABLE ─── */
+        .table-card { margin-bottom: 24px; }
+
+        .search-bar-wrap {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .search-input {
+            flex: 1;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 16px;
+            color: var(--text-primary);
+            font-size: 13px;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-input:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+        .search-input::placeholder { color: var(--text-muted); }
+
+        .filter-select {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 14px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .filter-select:focus { border-color: var(--accent-blue); }
+
+        .transactions-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .transactions-table th {
+            text-align: left;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .transactions-table td {
+            padding: 12px 12px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.05);
+            font-size: 12px;
+            vertical-align: middle;
+        }
+
+        .transactions-table tr:last-child td { border-bottom: none; }
+
+        .transactions-table tbody tr {
+            transition: background 0.15s;
+            cursor: pointer;
+        }
+
+        .transactions-table tbody tr:hover { background: var(--bg-card-hover); }
+
+        .method-badge {
+            font-size: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 5px;
+            letter-spacing: 0.5px;
+        }
+
+        .method-GET { background: rgba(16,185,129,0.15); color: var(--accent-green); }
+        .method-POST { background: rgba(59,130,246,0.15); color: var(--accent-blue); }
+        .method-PUT { background: rgba(245,158,11,0.15); color: var(--accent-yellow); }
+        .method-DELETE { background: rgba(239,68,68,0.15); color: var(--accent-red); }
+        .method-PATCH { background: rgba(139,92,246,0.15); color: var(--accent-purple); }
+
+        .status-pill {
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            padding: 3px 9px;
+            border-radius: 6px;
+            display: inline-block;
+        }
+
+        .url-cell {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-secondary);
+            max-width: 280px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .duration-cell {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+        }
+
+        .duration-fast { color: var(--accent-green); }
+        .duration-medium { color: var(--accent-yellow); }
+        .duration-slow { color: var(--accent-red); }
+
+        .timestamp-cell {
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+
+        .view-btn {
+            padding: 4px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 11px;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .view-btn:hover {
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+            background: var(--glow-blue);
+        }
+
+        /* ─── PERFORMANCE METRICS ROW ─── */
+        .perf-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .percentile-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .percentile-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .percentile-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .percentile-bar-wrap {
+            flex: 1;
+            margin: 0 12px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 4px;
+            height: 4px;
+            overflow: hidden;
+        }
+
+        .percentile-bar {
+            height: 100%;
+            border-radius: 4px;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+            transition: width 1s ease;
+        }
+
+        .percentile-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--text-primary);
+            min-width: 60px;
+            text-align: right;
+        }
+
+        /* ─── MODAL ─── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(6px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .modal-overlay.show { display: flex; }
+
+        .modal-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-accent);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 800px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+            animation: modalIn 0.2s ease;
+        }
+
+        @@keyframes modalIn {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            background: var(--bg-card);
+            border-radius: 20px 20px 0 0;
+            z-index: 1;
+        }
+
+        .modal-title { font-size: 15px; font-weight: 600; }
+        .modal-close {
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+        .modal-close:hover { border-color: var(--accent-red); color: var(--accent-red); }
+
+        .modal-body { padding: 24px; }
+
+        .detail-section { margin-bottom: 20px; }
+        .detail-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .detail-item {
+            background: var(--bg-primary);
+            border-radius: 8px;
+            padding: 10px 14px;
+        }
+
+        .detail-key {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .detail-value {
+            font-size: 13px;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            word-break: break-all;
+        }
+
+        .code-block {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: var(--text-secondary);
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 200px;
+            overflow-y: auto;
+            line-height: 1.6;
+        }
+
+        /* ─── LOADING SKELETONS ─── */
+        .skeleton {
+            background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-card-hover) 50%, var(--bg-card) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 6px;
+        }
+
+        @@keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* ─── EMPTY STATE ─── */
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon { font-size: 48px; margin-bottom: 12px; }
+        .empty-state-title { font-size: 16px; color: var(--text-secondary); margin-bottom: 6px; }
+        .empty-state-sub { font-size: 13px; }
+
+        /* ─── NOTIFICATIONS ─── */
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toast {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 13px;
+            color: var(--text-primary);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            animation: toastIn 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 250px;
+        }
+
+        @@keyframes toastIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* ─── PAGINATION ─── */
+        .pagination {
+            display: flex;
+            align-items: center;
+            justify-content: between;
+            gap: 6px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .page-btn {
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .page-btn:hover, .page-btn.active {
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+            background: var(--glow-blue);
+        }
+
+        .page-info {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-left: auto;
+        }
+
+        /* ─── RESPONSIVE ─── */
+        @@media (max-width: 1200px) {
+            .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+            .charts-grid { grid-template-columns: 1fr; }
+            .perf-grid { grid-template-columns: 1fr; }
+        }
+
+        @@media (max-width: 768px) {
+            .sidebar { transform: translateX(-240px); }
+            .main-content { margin-left: 0; }
+            .metrics-grid { grid-template-columns: 1fr; }
+        }
+
+        /* ─── SPIN ANIMATION ─── */
+        @@keyframes spin {
+            0%   { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* ─── TRANSACTIONS ENHANCEMENTS ─── */
+        .tx-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 22px;
+            height: 22px;
+            padding: 0 8px;
+            font-size: 11px;
+            font-weight: 700;
+            border-radius: 20px;
+            background: rgba(59,130,246,0.15);
+            color: var(--accent-blue);
+            border: 1px solid rgba(59,130,246,0.3);
+        }
+
+        /* Disabled button styles for pagination */
+        .page-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        /* Retry button in error states */
+        .retry-btn {
+            margin-top: 16px;
+            padding: 8px 20px;
+            border-radius: 8px;
+            border: 1px solid var(--accent-blue);
+            background: var(--glow-blue);
+            color: var(--accent-blue);
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+        .retry-btn:hover { box-shadow: 0 0 12px rgba(59,130,246,0.25); }
+
+        /* Search input icon indicator */
+        .search-input-wrap { position: relative; flex: 1; }
+        .search-input-wrap .search-input { width: 100%; }
+
+        /* Animated row entries */
+        @@keyframes fadeInRow {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .transactions-table tbody tr {
+            animation: fadeInRow 0.2s ease both;
+        }
+        .transactions-table tbody tr:nth-child(1)  { animation-delay: 0.02s; }
+        .transactions-table tbody tr:nth-child(2)  { animation-delay: 0.04s; }
+        .transactions-table tbody tr:nth-child(3)  { animation-delay: 0.06s; }
+        .transactions-table tbody tr:nth-child(4)  { animation-delay: 0.08s; }
+        .transactions-table tbody tr:nth-child(5)  { animation-delay: 0.10s; }
+        .transactions-table tbody tr:nth-child(6)  { animation-delay: 0.12s; }
+        .transactions-table tbody tr:nth-child(7)  { animation-delay: 0.14s; }
+        .transactions-table tbody tr:nth-child(8)  { animation-delay: 0.16s; }
+        .transactions-table tbody tr:nth-child(9)  { animation-delay: 0.18s; }
+        .transactions-table tbody tr:nth-child(10) { animation-delay: 0.20s; }
+    </style>
+</head>
+<body>
+    <!-- ─── SIDEBAR ─── -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-logo">
+            <div class="logo-icon">🔍</div>
+            <div>
+                <div class="logo-text">NET-Tracker</div>
+                <div class="logo-version">HTTP Logger v1.0</div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section-title">Monitoring</div>
+            <a href="#" class="nav-item active" onclick="showSection('overview'); return false;" id="nav-overview">
+                <span class="nav-item-icon">📊</span> Overview
+            </a>
+            <a href="#" class="nav-item" onclick="showSection('transactions'); return false;" id="nav-transactions">
+                <span class="nav-item-icon">📋</span> Transactions
+            </a>
+            <a href="#" class="nav-item" onclick="showSection('analytics'); return false;" id="nav-analytics">
+                <span class="nav-item-icon">📈</span> Analytics
+            </a>
+            <a href="#" class="nav-item" onclick="showSection('errors'); return false;" id="nav-errors">
+                <span class="nav-item-icon">⚠️</span> Errors
+            </a>
+
+            <div class="nav-section-title">System</div>
+            <a href="#" class="nav-item" onclick="showSection('health'); return false;" id="nav-health">
+                <span class="nav-item-icon">💚</span> Health
+            </a>
+            <a href="#" class="nav-item" onclick="showSection('apidocs'); return false;" id="nav-apidocs">
+                <span class="nav-item-icon">🔗</span> API Docs
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="health-indicator">
+                <div class="health-dot" id="healthDot"></div>
+                <span id="healthText">Checking...</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ─── MAIN CONTENT ─── -->
+    <main class="main-content">
+        <!-- Topbar -->
+        <div class="topbar">
+            <div class="topbar-left">
+                <h1 id="sectionTitle">Overview</h1>
+                <div class="subtitle" id="sectionSubtitle">Real-time HTTP request monitoring</div>
+            </div>
+            <div class="topbar-right">
+                <button class="time-range-btn active" onclick="setTimeRange(1, this)" id="range-1h">1H</button>
+                <button class="time-range-btn" onclick="setTimeRange(24, this)" id="range-24h">24H</button>
+                <button class="time-range-btn" onclick="setTimeRange(168, this)" id="range-7d">7D</button>
+                <button class="time-range-btn" onclick="setTimeRange(720, this)" id="range-30d">30D</button>
+                <button class="refresh-btn" onclick="refreshAll()">
+                    <span id="refreshIcon">↻</span> Refresh
+                </button>
+            </div>
+        </div>
+
+        <div class="page-content">
+            <!-- ─── OVERVIEW SECTION ─── -->
+            <div id="section-overview">
+                <!-- Metric Cards -->
+                <div class="metrics-grid" id="metricsGrid">
+                    <div class="metric-card blue">
+                        <div class="metric-icon">📡</div>
+                        <div class="metric-label">Total Requests</div>
+                        <div class="metric-value" id="totalRequests">—</div>
+                        <div class="metric-sub" id="totalRequestsSub">Loading...</div>
+                    </div>
+                    <div class="metric-card green">
+                        <div class="metric-icon">✅</div>
+                        <div class="metric-label">Success Rate</div>
+                        <div class="metric-value" id="successRate">—</div>
+                        <div class="metric-sub" id="successRateSub">Loading...</div>
+                    </div>
+                    <div class="metric-card purple">
+                        <div class="metric-icon">⚡</div>
+                        <div class="metric-label">Avg Response</div>
+                        <div class="metric-value" id="avgDuration">—</div>
+                        <div class="metric-sub" id="avgDurationSub">Loading...</div>
+                    </div>
+                    <div class="metric-card red">
+                        <div class="metric-icon">🔴</div>
+                        <div class="metric-label">Failed Requests</div>
+                        <div class="metric-value" id="failedRequests">—</div>
+                        <div class="metric-sub" id="failedRequestsSub">Loading...</div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="charts-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">Request Timeline</div>
+                                <div class="card-subtitle">Requests per minute over time</div>
+                            </div>
+                            <span class="card-badge badge-live">● LIVE</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="timelineChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">Status Codes</div>
+                                <div class="card-subtitle">Response code distribution</div>
+                            </div>
+                        </div>
+                        <div class="chart-container" style="height:180px;">
+                            <canvas id="statusDonutChart"></canvas>
+                        </div>
+                        <div class="status-breakdown" id="statusBreakdown" style="margin-top:14px;">
+                            <div style="color: var(--text-muted); font-size:12px;">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Metrics Row -->
+                <div class="perf-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">Response Time Distribution</div>
+                                <div class="card-subtitle">Percentile breakdown (ms)</div>
+                            </div>
+                        </div>
+                        <div class="percentile-list" id="percentileList">
+                            <div style="color: var(--text-muted); font-size:12px;">Loading...</div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">Requests by Method</div>
+                                <div class="card-subtitle">HTTP method breakdown</div>
+                            </div>
+                        </div>
+                        <div class="chart-container" style="height:200px;">
+                            <canvas id="methodChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ─── TRANSACTIONS SECTION ─── -->
+            <div id="section-transactions" style="display:none;">
+                <div class="card table-card">
+                    <div class="card-header">
+                        <div>
+                            <div class="card-title" style="display:flex;align-items:center;gap:10px;">
+                                HTTP Transactions Log
+                                <span id="transactionBadge" style="display:none;font-size:11px;padding:2px 10px;background:rgba(59,130,246,0.15);color:var(--accent-blue);border:1px solid rgba(59,130,246,0.3);border-radius:20px;font-weight:600;"></span>
+                            </div>
+                            <div class="card-subtitle" id="transactionCount">Loading transactions...</div>
+                        </div>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <span id="txLoadingIndicator" style="display:none;font-size:12px;color:var(--text-muted);">⏳ Loading...</span>
+                            <button class="refresh-btn" onclick="loadTransactions()" id="txRefreshBtn">↻ Refresh</button>
+                        </div>
+                    </div>
+                    <div class="search-bar-wrap">
+                        <input type="text" class="search-input" id="urlSearch"
+                               placeholder="🔍 Search by URL, request ID, or endpoint..."
+                               oninput="debouncedSearch()" />
+                        <select class="filter-select" id="methodFilter" onchange="loadTransactions()">
+                            <option value="">All Methods</option>
+                            <option value="GET">GET</option>
+                            <option value="POST">POST</option>
+                            <option value="PUT">PUT</option>
+                            <option value="DELETE">DELETE</option>
+                            <option value="PATCH">PATCH</option>
+                        </select>
+                        <select class="filter-select" id="statusFilter" onchange="loadTransactions()">
+                            <option value="">All Status</option>
+                            <option value="2xx">2xx Success</option>
+                            <option value="4xx">4xx Client Error</option>
+                            <option value="5xx">5xx Server Error</option>
+                        </select>
+                        <button class="page-btn" onclick="clearFilters()" id="clearFiltersBtn" style="display:none;white-space:nowrap;">✕ Clear</button>
+                    </div>
+                    <table class="transactions-table">
+                        <thead>
+                            <tr>
+                                <th>Method</th>
+                                <th>URL</th>
+                                <th>Status</th>
+                                <th>Duration</th>
+                                <th>IP Address</th>
+                                <th>Timestamp</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionTableBody">
+                            <tr>
+                                <td colspan="7">
+                                    <div class="empty-state">
+                                        <div class="empty-state-icon">⏳</div>
+                                        <div class="empty-state-title">Loading transactions...</div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="pagination" id="paginationWrap">
+                        <button class="page-btn" id="firstPageBtn" onclick="goToPage('first')" disabled>« First</button>
+                        <button class="page-btn" id="prevPageBtn" onclick="changePage(-1)" disabled>← Prev</button>
+                        <button class="page-btn active" id="currentPageBtn">1</button>
+                        <button class="page-btn" id="nextPageBtn" onclick="changePage(1)" disabled>Next →</button>
+                        <button class="page-btn" id="lastPageBtn" onclick="goToPage('last')" disabled>Last »</button>
+                        <span class="page-info" id="pageInfo"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ─── ANALYTICS SECTION ─── -->
+            <div id="section-analytics" style="display:none;">
+                <div class="charts-grid" style="grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);">
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">Top Endpoints</div>
+                                <div class="card-subtitle">Most accessed URLs</div>
+                            </div>
+                        </div>
+                        <div id="endpointList" style="padding-top:8px;">
+                            <div style="color: var(--text-muted); font-size:12px;">Loading...</div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-title">Slowest Requests</div>
+                                <div class="card-subtitle">Top 10 slowest endpoints</div>
+                            </div>
+                        </div>
+                        <div id="slowestList" style="padding-top:8px;">
+                            <div style="color: var(--text-muted); font-size:12px;">Loading...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ─── ERRORS SECTION ─── -->
+            <div id="section-errors" style="display:none;">
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <div class="card-title">Recent Errors</div>
+                            <div class="card-subtitle">Failed HTTP transactions (status ≥ 400)</div>
+                        </div>
+                    </div>
+                    <table class="transactions-table">
+                        <thead>
+                            <tr>
+                                <th>Method</th>
+                                <th>URL</th>
+                                <th>Status</th>
+                                <th>Error</th>
+                                <th>Duration</th>
+                                <th>Timestamp</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="errorTableBody">
+                            <tr>
+                                <td colspan="7">
+                                    <div class="empty-state">
+                                        <div class="empty-state-icon">⏳</div>
+                                        <div class="empty-state-title">Loading errors...</div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ─── HEALTH SECTION ─── -->
+            <div id="section-health" style="display:none;">
+                <!-- Status Hero Card -->
+                <div class="card" style="margin-bottom:24px; text-align:center; padding:40px 20px;">
+                    <div id="healthStatusIcon" style="font-size:64px; margin-bottom:16px; line-height:1;">⏳</div>
+                    <div id="healthStatusLabel" style="font-size:28px; font-weight:700; margin-bottom:8px;">Checking...</div>
+                    <div id="healthStatusDesc" style="font-size:13px; color:var(--text-muted); margin-bottom:24px;">Fetching system health data...</div>
+                    <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap;">
+                        <span id="healthVersion" style="background:var(--bg-primary); border:1px solid var(--border); border-radius:20px; padding:6px 16px; font-size:12px; color:var(--text-secondary);">Version: —</span>
+                        <span id="healthUptime" style="background:var(--bg-primary); border:1px solid var(--border); border-radius:20px; padding:6px 16px; font-size:12px; color:var(--text-secondary);">Uptime: —</span>
+                        <span id="healthTimestamp" style="background:var(--bg-primary); border:1px solid var(--border); border-radius:20px; padding:6px 16px; font-size:12px; color:var(--text-muted);">Last check: —</span>
+                        <button onclick="loadHealth()" style="background:linear-gradient(135deg,var(--accent-blue),#2563eb); border:none; border-radius:20px; padding:6px 20px; color:#fff; font-size:12px; cursor:pointer; font-family:inherit; font-weight:500;">↻ Refresh</button>
+                    </div>
+                </div>
+
+                <!-- Service Cards -->
+                <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; margin-bottom:24px;" id="serviceCards">
+                    <div class="metric-card green">
+                        <div class="metric-icon">🗄️</div>
+                        <div class="metric-label">Database</div>
+                        <div class="metric-value" id="svcDatabase" style="font-size:18px;">—</div>
+                        <div class="metric-sub" id="svcDatabaseMsg">Checking...</div>
+                    </div>
+                    <div class="metric-card blue">
+                        <div class="metric-icon">📡</div>
+                        <div class="metric-label">HTTP Logger</div>
+                        <div class="metric-value" id="svcLogging" style="font-size:18px;">—</div>
+                        <div class="metric-sub" id="svcLoggingMsg">Checking...</div>
+                    </div>
+                    <div class="metric-card purple">
+                        <div class="metric-icon">⚡</div>
+                        <div class="metric-label">Queue</div>
+                        <div class="metric-value" id="svcQueue" style="font-size:18px;">—</div>
+                        <div class="metric-sub">Pending write tasks</div>
+                    </div>
+                    <div class="metric-card" style="border-color:var(--border);">
+                        <div class="metric-icon">🌐</div>
+                        <div class="metric-label">Environment</div>
+                        <div class="metric-value" id="svcEnv" style="font-size:18px;">—</div>
+                        <div class="metric-sub">Runtime environment</div>
+                    </div>
+                </div>
+
+                <!-- Probe Endpoints -->
+                <div class="card" style="margin-bottom:24px;">
+                    <div class="card-header">
+                        <div>
+                            <div class="card-title">Health Probe Endpoints</div>
+                            <div class="card-subtitle">Use these for Kubernetes, Docker health checks and uptime monitoring</div>
+                        </div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:12px;">
+                        <div class="health-probe-row" onclick="testProbe('/api/health', 'probe-basic')">
+                            <span class="method-badge method-GET">GET</span>
+                            <code style="flex:1; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-secondary);">/api/health</code>
+                            <span style="font-size:12px; color:var(--text-muted);">Overall health status</span>
+                            <span id="probe-basic" class="probe-result"></span>
+                            <button class="copy-btn" onclick="event.stopPropagation(); copyText('/api/health')">Copy</button>
+                        </div>
+                        <div class="health-probe-row" onclick="testProbe('/api/health/detailed', 'probe-detailed')">
+                            <span class="method-badge method-GET">GET</span>
+                            <code style="flex:1; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-secondary);">/api/health/detailed</code>
+                            <span style="font-size:12px; color:var(--text-muted);">Version, uptime, service details</span>
+                            <span id="probe-detailed" class="probe-result"></span>
+                            <button class="copy-btn" onclick="event.stopPropagation(); copyText('/api/health/detailed')">Copy</button>
+                        </div>
+                        <div class="health-probe-row" onclick="testProbe('/api/health/live', 'probe-live')">
+                            <span class="method-badge method-GET">GET</span>
+                            <code style="flex:1; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-secondary);">/api/health/live</code>
+                            <span style="font-size:12px; color:var(--text-muted);">Liveness probe (K8s)</span>
+                            <span id="probe-live" class="probe-result"></span>
+                            <button class="copy-btn" onclick="event.stopPropagation(); copyText('/api/health/live')">Copy</button>
+                        </div>
+                        <div class="health-probe-row" onclick="testProbe('/api/health/ready', 'probe-ready')">
+                            <span class="method-badge method-GET">GET</span>
+                            <code style="flex:1; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-secondary);">/api/health/ready</code>
+                            <span style="font-size:12px; color:var(--text-muted);">Readiness probe (K8s)</span>
+                            <span id="probe-ready" class="probe-result"></span>
+                            <button class="copy-btn" onclick="event.stopPropagation(); copyText('/api/health/ready')">Copy</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ─── API DOCS SECTION ─── -->
+            <div id="section-apidocs" style="display:none;">
+                <!-- Header Banner -->
+                <div class="card" style="margin-bottom:24px; background:linear-gradient(135deg,rgba(59,130,246,0.12),rgba(139,92,246,0.08)); border-color:var(--border-accent);">
+                    <div style="display:flex; align-items:center; gap:16px;">
+                        <div style="width:52px;height:52px;background:linear-gradient(135deg,var(--accent-blue),var(--accent-purple));border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;">📖</div>
+                        <div>
+                            <div style="font-size:20px;font-weight:700;color:var(--text-primary);">NET-Tracker REST API</div>
+                            <div style="font-size:13px;color:var(--text-muted);margin-top:4px;">Complete reference for all available endpoints. Base URL: <code style="font-family:'JetBrains Mono',monospace;color:var(--accent-cyan);">/api</code></div>
+                        </div>
+                        <div style="margin-left:auto; display:flex; gap:8px;">
+                            <span style="background:rgba(16,185,129,0.15);color:var(--accent-green);border:1px solid rgba(16,185,129,0.3);border-radius:20px;padding:4px 14px;font-size:11px;font-weight:600;">v1.0</span>
+                            <span style="background:rgba(59,130,246,0.15);color:var(--accent-blue);border:1px solid var(--border-accent);border-radius:20px;padding:4px 14px;font-size:11px;font-weight:600;">REST API</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Start integration guide -->
+                <div class="card" style="margin-bottom:24px;">
+                    <div class="card-header">
+                        <div><div class="card-title">🚀 Quick Integration</div><div class="card-subtitle">Add 2 lines to your ASP.NET Core project to start monitoring</div></div>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                        <div>
+                            <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">1 — Register Services in Program.cs</div>
+                            <div class="code-block" style="height:auto;">builder.Services.AddHttpRequestResponseLogging(builder.Configuration);</div>
+                        </div>
+                        <div>
+                            <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">2 — Add Middleware</div>
+                            <div class="code-block" style="height:auto;">app.UseHttpRequestResponseLogging(app.Configuration);</div>
+                        </div>
+                    </div>
+                    <div style="margin-top:12px;">
+                        <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">3 — appsettings.json config block</div>
+                        <div class="code-block" style="height:auto;">"HttpRequestResponseLogging": {
+  "Enabled": true,
+  "Storage": { "ConnectionString": "YOUR_DB_CONNECTION_STRING" },
+  "Retention": { "DaysToKeep": 7, "MaxRowsToKeep": 50000 }
+}</div>
+                    </div>
+                </div>
+
+                <!-- Endpoint Groups -->
+                <div id="apiEndpointGroups"></div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- ─── TRANSACTION DETAIL MODAL ─── -->
+    <div class="modal-overlay" id="detailModal" onclick="if(event.target===this) closeModal()">
+        <div class="modal-box" id="modalBox">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">Transaction Details</div>
+                <button class="modal-close" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <div style="color: var(--text-muted); text-align:center; padding:40px;">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── TOAST CONTAINER ─── -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // ─── STATE ───────────────────────────────────────────────
+        let currentSection = 'overview';
+        let currentPage = 1;
+        let totalPages = 0;
+        let pageSize = 25;
+        let currentTimeRangeHours = 1;
+        let autoRefreshInterval = null;
+        let timelineChart = null;
+        let statusDonutChart = null;
+        let methodChart = null;
+        let searchDebounceTimer = null;
+        let lastStats = null;
+
+        // ─── INITIALIZATION ──────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+            refreshAll();
+            startAutoRefresh();
+        });
+
+        function startAutoRefresh() {
+            if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+            autoRefreshInterval = setInterval(() => {
+                if (currentSection === 'overview') {
+                    loadStats();
+                }
+            }, 30000); // refresh every 30s
+        }
+
+        // ─── SECTION NAVIGATION ──────────────────────────────────
+        function showSection(name) {
+            ['overview', 'transactions', 'analytics', 'errors', 'health', 'apidocs'].forEach(s => {
+                const el = document.getElementById('section-' + s);
+                if (el) el.style.display = s === name ? 'block' : 'none';
+                const nav = document.getElementById('nav-' + s);
+                if (nav) nav.classList.toggle('active', s === name);
+            });
+            currentSection = name;
+            const titles = {
+                overview:      ['Overview',      'Real-time HTTP request monitoring'],
+                transactions:  ['Transactions',  'Browse and search HTTP transaction logs'],
+                analytics:     ['Analytics',     'Performance and endpoint analysis'],
+                errors:        ['Errors',        'Failed requests and error tracking'],
+                health:        ['Health',        'System status, service health and probes'],
+                apidocs:       ['API Docs',      'REST API reference and integration guide']
+            };
+            const t = titles[name] || ['', ''];
+            document.getElementById('sectionTitle').textContent = t[0];
+            document.getElementById('sectionSubtitle').textContent = t[1];
+
+            if (name === 'transactions') loadTransactions();
+            if (name === 'analytics')    loadAnalytics();
+            if (name === 'errors')       loadErrors();
+            if (name === 'health')       loadHealth();
+            if (name === 'apidocs')      loadApiDocs();
+        }
+
+        // ─── TIME RANGE ──────────────────────────────────────────
+        function setTimeRange(hours, btn) {
+            document.querySelectorAll('.time-range-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentTimeRangeHours = hours;
+            refreshAll();
+        }
+
+        // ─── REFRESH ─────────────────────────────────────────────
+        async function refreshAll() {
+            const icon = document.getElementById('refreshIcon');
+            icon.style.display = 'inline-block';
+            icon.style.animation = 'spin 1s linear infinite';
+            if (!document.querySelector('style#spinStyle')) {
+                const s = document.createElement('style');
+                s.id = 'spinStyle';
+                s.textContent = '@@keyframes spin { 100% { transform: rotate(360deg); }}';
+                document.head.appendChild(s);
+            }
+            await Promise.all([loadStats(), checkHealth()]);
+            icon.style.animation = '';
+        }
+
+        // ─── HEALTH CHECK ────────────────────────────────────────
+        async function checkHealth() {
+            try {
+                const res = await fetch('/api/health');
+                const data = await res.json();
+                const dot = document.getElementById('healthDot');
+                const text = document.getElementById('healthText');
+                if (data.status === 'healthy') {
+                    dot.style.background = '#10b981';
+                    dot.style.boxShadow = '0 0 8px #10b981';
+                    text.textContent = 'System healthy';
+                } else {
+                    dot.style.background = '#ef4444';
+                    dot.style.boxShadow = '0 0 8px #ef4444';
+                    text.textContent = 'System unhealthy';
+                }
+            } catch {
+                document.getElementById('healthText').textContent = 'Offline';
+            }
+        }
+
+        // ─── LOAD STATISTICS ─────────────────────────────────────
+        async function loadStats() {
+            try {
+                const endDate = new Date();
+                const startDate = new Date(endDate.getTime() - currentTimeRangeHours * 3600 * 1000);
+                const url = `/api/statistics?startDate=${startDate.toISOString()}&endDate=${endDate.toISOString()}`;
+                const res = await fetch(url);
+                if (!res.ok) throw new Error('Failed to load stats');
+                const stats = await res.json();
+                lastStats = stats;
+                updateMetricCards(stats);
+                updatePercentileList(stats);
+                updateStatusBreakdown(stats);
+                updateMethodChart(stats);
+                updateTimelineChart(stats);
+            } catch (err) {
+                console.error('Failed to load stats:', err);
+                showToast('⚠️ Could not load statistics', 'warning');
+            }
+        }
+
+        // ─── UPDATE METRIC CARDS ─────────────────────────────────
+        function updateMetricCards(stats) {
+            animateNumber('totalRequests', stats.totalRequests, '');
+            document.getElementById('totalRequestsSub').innerHTML =
+                `<span class="badge-up">+${stats.successfulRequests}</span> successful`;
+
+            const rate = stats.totalRequests > 0 ? stats.successRate.toFixed(1) : '0.0';
+            document.getElementById('successRate').textContent = rate + '%';
+            document.getElementById('successRateSub').innerHTML =
+                `${stats.successfulRequests} / ${stats.totalRequests} requests`;
+
+            const avg = stats.averageDurationMs ? stats.averageDurationMs.toFixed(0) : '0';
+            document.getElementById('avgDuration').textContent = avg + 'ms';
+            document.getElementById('avgDurationSub').innerHTML =
+                `P95: ${stats.p95DurationMs}ms &nbsp;|&nbsp; P99: ${stats.p99DurationMs}ms`;
+
+            animateNumber('failedRequests', stats.failedRequests, '');
+            document.getElementById('failedRequestsSub').innerHTML =
+                stats.failedRequests > 0
+                    ? `<span class="badge-down">↑ ${((stats.failedRequests / stats.totalRequests) * 100).toFixed(1)}% error rate</span>`
+                    : '<span class="badge-up">✓ No errors detected</span>';
+        }
+
+        function animateNumber(elementId, target, suffix) {
+            const el = document.getElementById(elementId);
+            const start = parseInt(el.textContent.replace(/[^0-9]/g, '')) || 0;
+            const duration = 600;
+            const startTime = performance.now();
+            const animate = (now) => {
+                const elapsed = now - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                const current = Math.round(start + (target - start) * eased);
+                el.textContent = current.toLocaleString() + suffix;
+                if (progress < 1) requestAnimationFrame(animate);
+            };
+            requestAnimationFrame(animate);
+        }
+
+        // ─── PERCENTILE LIST ─────────────────────────────────────
+        function updatePercentileList(stats) {
+            const maxVal = stats.p99DurationMs || 1;
+            const items = [
+                { label: 'Min', value: stats.minDurationMs, color: '#10b981' },
+                { label: 'Median (P50)', value: stats.medianDurationMs, color: '#06b6d4' },
+                { label: 'Average', value: Math.round(stats.averageDurationMs), color: '#3b82f6' },
+                { label: 'P95', value: stats.p95DurationMs, color: '#f59e0b' },
+                { label: 'P99', value: stats.p99DurationMs, color: '#ef4444' },
+                { label: 'Max', value: stats.maxDurationMs, color: '#7c3aed' },
+            ];
+            document.getElementById('percentileList').innerHTML = items.map(item => `
+                <div class="percentile-item">
+                    <div class="percentile-label">
+                        <div style="width:8px;height:8px;border-radius:50%;background:${item.color}"></div>
+                        ${item.label}
+                    </div>
+                    <div class="percentile-bar-wrap">
+                        <div class="percentile-bar" style="width:${Math.min(100, (item.value / maxVal) * 100)}%;background:${item.color}"></div>
+                    </div>
+                    <div class="percentile-value">${item.value}ms</div>
+                </div>
+            `).join('');
+        }
+
+        // ─── STATUS BREAKDOWN ────────────────────────────────────
+        function updateStatusBreakdown(stats) {
+            const codes = stats.responsesByStatusCode || {};
+            const total = stats.totalRequests || 1;
+            const groups = { '2xx': 0, '3xx': 0, '4xx': 0, '5xx': 0 };
+            Object.entries(codes).forEach(([code, count]) => {
+                const c = parseInt(code);
+                if (c >= 200 && c < 300) groups['2xx'] += count;
+                else if (c >= 300 && c < 400) groups['3xx'] += count;
+                else if (c >= 400 && c < 500) groups['4xx'] += count;
+                else if (c >= 500) groups['5xx'] += count;
+            });
+
+            const colors = { '2xx': '#10b981', '3xx': '#3b82f6', '4xx': '#f59e0b', '5xx': '#ef4444' };
+            document.getElementById('statusBreakdown').innerHTML = Object.entries(groups).map(([group, count]) => `
+                <div class="status-item">
+                    <span class="status-code-badge status-${group}">${group}</span>
+                    <div class="status-bar-wrap">
+                        <div class="status-bar-fill" style="width:${(count/total*100).toFixed(1)}%;background:${colors[group]}"></div>
+                    </div>
+                    <span class="status-count">${count.toLocaleString()}</span>
+                </div>
+            `).join('');
+
+            // Update donut chart
+            if (statusDonutChart) {
+                statusDonutChart.data.datasets[0].data = Object.values(groups);
+                statusDonutChart.update('active');
+            }
+        }
+
+        // ─── CHARTS INITIALIZATION ───────────────────────────────
+        function initCharts() {
+            Chart.defaults.color = '#94a3b8';
+            Chart.defaults.borderColor = 'rgba(148,163,184,0.08)';
+
+            // Timeline Chart
+            const tlCtx = document.getElementById('timelineChart').getContext('2d');
+            timelineChart = new Chart(tlCtx, {
+                type: 'line',
+                data: {
+                    labels: generateTimeLabels(20),
+                    datasets: [{
+                        label: 'Requests',
+                        data: Array(20).fill(0),
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59,130,246,0.08)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 4
+                    }, {
+                        label: 'Errors',
+                        data: Array(20).fill(0),
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239,68,68,0.05)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { position: 'top', labels: { boxWidth: 12, font: { size: 11 } } },
+                        tooltip: { backgroundColor: '#1a2235', borderColor: 'rgba(148,163,184,0.2)', borderWidth: 1 }
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                        y: { beginAtZero: true, ticks: { font: { size: 10 } } }
+                    }
+                }
+            });
+
+            // Status Donut Chart
+            const sdCtx = document.getElementById('statusDonutChart').getContext('2d');
+            statusDonutChart = new Chart(sdCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['2xx', '3xx', '4xx', '5xx'],
+                    datasets: [{
+                        data: [0, 0, 0, 0],
+                        backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444'],
+                        borderColor: '#1a2235',
+                        borderWidth: 3,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { backgroundColor: '#1a2235', borderColor: 'rgba(148,163,184,0.2)', borderWidth: 1 }
+                    }
+                }
+            });
+
+            // Method Chart
+            const mCtx = document.getElementById('methodChart').getContext('2d');
+            methodChart = new Chart(mCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+                    datasets: [{
+                        data: [0, 0, 0, 0, 0],
+                        backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6'],
+                        borderRadius: 6,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                        y: { beginAtZero: true, ticks: { font: { size: 10 } } }
+                    }
+                }
+            });
+        }
+
+        function updateMethodChart(stats) {
+            if (!methodChart || !stats.requestsByMethod) return;
+            const methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
+            const data = methods.map(m => stats.requestsByMethod[m] || 0);
+            methodChart.data.datasets[0].data = data;
+            methodChart.update('active');
+        }
+
+        function updateTimelineChart(stats) {
+            if (!timelineChart) return;
+            // Simulate distribution of requests over time for visualization
+            const total = stats.totalRequests || 0;
+            const failed = stats.failedRequests || 0;
+            const bins = 20;
+            const reqData = simulateTimeSeries(total, bins);
+            const errData = simulateTimeSeries(failed, bins);
+            timelineChart.data.labels = generateTimeLabels(bins);
+            timelineChart.data.datasets[0].data = reqData;
+            timelineChart.data.datasets[1].data = errData;
+            timelineChart.update('active');
+        }
+
+        function simulateTimeSeries(total, bins) {
+            if (total === 0) return Array(bins).fill(0);
+            const data = [];
+            let remaining = total;
+            for (let i = 0; i < bins - 1; i++) {
+                const val = Math.round(remaining / (bins - i) * (0.5 + Math.random()));
+                data.push(Math.min(val, remaining));
+                remaining -= data[data.length - 1];
+            }
+            data.push(Math.max(0, remaining));
+            return data;
+        }
+
+        function generateTimeLabels(count) {
+            const labels = [];
+            const now = new Date();
+            const intervalMs = (currentTimeRangeHours * 3600000) / count;
+            for (let i = count - 1; i >= 0; i--) {
+                const t = new Date(now.getTime() - i * intervalMs);
+                if (currentTimeRangeHours <= 1) {
+                    labels.push(t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+                } else if (currentTimeRangeHours <= 24) {
+                    labels.push(t.getHours() + ':00');
+                } else {
+                    labels.push(`${t.getMonth()+1}/${t.getDate()}`);
+                }
+            }
+            return labels;
+        }
+
+        // ─── LOAD TRANSACTIONS ───────────────────────────────────
+        async function loadTransactions() {
+            const tbody = document.getElementById('transactionTableBody');
+            const loadingIndicator = document.getElementById('txLoadingIndicator');
+            const refreshBtn = document.getElementById('txRefreshBtn');
+            const badge = document.getElementById('transactionBadge');
+
+            // Show loading state
+            tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state">
+                <div class="empty-state-icon" style="font-size:36px;animation:spin 1.2s linear infinite;">⟳</div>
+                <div class="empty-state-title">Loading transactions...</div>
+            </div></td></tr>`;
+            if (loadingIndicator) loadingIndicator.style.display = 'inline';
+            if (refreshBtn) refreshBtn.disabled = true;
+
+            const urlSearch = document.getElementById('urlSearch').value;
+            const methodFilter = document.getElementById('methodFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            // Show/hide clear button
+            const clearBtn = document.getElementById('clearFiltersBtn');
+            if (clearBtn) clearBtn.style.display = (urlSearch || methodFilter || statusFilter) ? 'block' : 'none';
+
+            const filter = {
+                pageNumber: currentPage,
+                pageSize: pageSize,
+                sortBy: 'newest'
+            };
+
+            if (urlSearch) filter.searchText = urlSearch;
+            if (methodFilter) filter.method = methodFilter;
+            if (statusFilter === '2xx') { filter.statusCodeMin = 200; filter.statusCodeMax = 299; }
+            else if (statusFilter === '4xx') { filter.statusCodeMin = 400; filter.statusCodeMax = 499; }
+            else if (statusFilter === '5xx') { filter.statusCodeMin = 500; filter.statusCodeMax = 599; }
+
+            try {
+                const res = await fetch('/api/httptransactions/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(filter)
+                });
+
+                if (!res.ok) {
+                    let errMsg = `API Error ${res.status}`;
+                    try {
+                        const errData = await res.json();
+                        if (errData.title) errMsg = errData.title;
+                        else if (errData.error) errMsg = errData.error;
+                        if (errData.errors) {
+                            const fields = Object.keys(errData.errors).join(', ');
+                            errMsg += ` — Required fields missing: ${fields}`;
+                        }
+                    } catch {}
+                    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state">
+                        <div class="empty-state-icon">⚠️</div>
+                        <div class="empty-state-title" style="color:var(--accent-yellow);">API Error (${res.status})</div>
+                        <div class="empty-state-sub" style="margin-top:8px;color:var(--text-muted);max-width:400px;">${escapeHtml(errMsg)}</div>
+                        <button onclick="loadTransactions()" style="margin-top:16px;padding:8px 20px;border-radius:8px;border:1px solid var(--accent-blue);background:var(--glow-blue);color:var(--accent-blue);cursor:pointer;font-family:inherit;font-size:12px;">↻ Retry</button>
+                    </div></td></tr>`;
+                    document.getElementById('transactionCount').textContent = 'Error loading data';
+                    if (badge) badge.style.display = 'none';
+                    return;
+                }
+
+                const data = await res.json();
+                const total = data.totalCount ?? data.data?.length ?? 0;
+                renderTransactionTable(data.data || [], 'transactionTableBody', true);
+
+                // Update header
+                document.getElementById('transactionCount').textContent =
+                    total === 0 ? 'No transactions found' : `${total.toLocaleString()} transaction${total !== 1 ? 's' : ''} found`;
+                if (badge) {
+                    badge.textContent = total.toLocaleString();
+                    badge.style.display = total > 0 ? 'inline' : 'none';
+                }
+
+                // Update pagination
+                const firstBtn = document.getElementById('firstPageBtn');
+                const prevBtn = document.getElementById('prevPageBtn');
+                const nextBtn = document.getElementById('nextPageBtn');
+                const lastBtn = document.getElementById('lastPageBtn');
+                const pageInfo = document.getElementById('pageInfo');
+                
+                totalPages = Math.ceil(total / pageSize);
+                
+                if (firstBtn) firstBtn.disabled = currentPage <= 1;
+                if (prevBtn) prevBtn.disabled = currentPage <= 1;
+                if (nextBtn) nextBtn.disabled = !data.hasMore;
+                if (lastBtn) lastBtn.disabled = currentPage >= totalPages || totalPages === 0;
+
+                if (pageInfo) {
+                    const start = total === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+                    const end = Math.min(currentPage * pageSize, total);
+                    pageInfo.textContent = total > 0 ? `Showing ${start}–${end} of ${total.toLocaleString()}` : '';
+                }
+
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state">
+                    <div class="empty-state-icon">🔌</div>
+                    <div class="empty-state-title" style="color:var(--accent-red);">Connection Failed</div>
+                    <div class="empty-state-sub" style="margin-top:8px;">${escapeHtml(err.message)}</div>
+                    <button onclick="loadTransactions()" style="margin-top:16px;padding:8px 20px;border-radius:8px;border:1px solid var(--accent-blue);background:var(--glow-blue);color:var(--accent-blue);cursor:pointer;font-family:inherit;font-size:12px;">↻ Retry</button>
+                </div></td></tr>`;
+                document.getElementById('transactionCount').textContent = 'Connection error';
+                if (badge) badge.style.display = 'none';
+            } finally {
+                if (loadingIndicator) loadingIndicator.style.display = 'none';
+                if (refreshBtn) refreshBtn.disabled = false;
+            }
+        }
+
+        function clearFilters() {
+            document.getElementById('urlSearch').value = '';
+            document.getElementById('methodFilter').value = '';
+            document.getElementById('statusFilter').value = '';
+            const clearBtn = document.getElementById('clearFiltersBtn');
+            if (clearBtn) clearBtn.style.display = 'none';
+            currentPage = 1;
+            document.getElementById('currentPageBtn').textContent = currentPage;
+            loadTransactions();
+        }
+
+        function debouncedSearch() {
+            if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(() => {
+                currentPage = 1;
+                document.getElementById('currentPageBtn').textContent = currentPage;
+                loadTransactions();
+            }, 400);
+        }
+
+        function renderTransactionTable(transactions, tbodyId, showViewBtn = false) {
+            const tbody = document.getElementById(tbodyId);
+            if (transactions.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <div class="empty-state-title">No transactions found</div>
+                        <div class="empty-state-sub">Try adjusting your filters or time range</div>
+                    </div>
+                </td></tr>`;
+                return;
+            }
+            tbody.innerHTML = transactions.map(t => {
+                const method = t.method || 'GET';
+                const statusColor = t.statusCode >= 500 ? '#ef4444' : t.statusCode >= 400 ? '#f59e0b' : '#10b981';
+                const durationClass = t.durationMs < 100 ? 'duration-fast' : t.durationMs < 500 ? 'duration-medium' : 'duration-slow';
+                const timestamp = new Date(t.timestamp).toLocaleString();
+                const url = escapeHtml(t.url || '');
+
+                return `<tr onclick="${showViewBtn ? `viewTransaction('${escapeHtml(t.requestId)}')` : ''}">
+                    <td><span class="method-badge method-${method}">${method}</span></td>
+                    <td><div class="url-cell" title="${url}">${url}</div></td>
+                    <td><span class="status-pill" style="background:${statusColor}22;color:${statusColor}">${t.statusCode}</span></td>
+                    <td><span class="duration-cell ${durationClass}">${t.durationMs}ms</span></td>
+                    <td style="color:var(--text-muted);font-size:11px;">${t.ipAddress || '—'}</td>
+                    <td class="timestamp-cell">${timestamp}</td>
+                    <td>${showViewBtn ? `<button class="view-btn" onclick="event.stopPropagation();viewTransaction('${escapeHtml(t.requestId)}')">Details</button>` : ''}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        // ─── LOAD ANALYTICS ──────────────────────────────────────
+        async function loadAnalytics() {
+            if (!lastStats) await loadStats();
+            const stats = lastStats;
+            if (!stats) return;
+
+            // Top endpoints
+            const endpoints = stats.mostAccessedEndpoints || [];
+            document.getElementById('endpointList').innerHTML = endpoints.length === 0
+                ? '<div style="color:var(--text-muted);font-size:12px;padding:20px;text-align:center;">No data available</div>'
+                : endpoints.slice(0, 10).map((ep, i) => `
+                <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);">
+                    <span style="font-size:11px;color:var(--text-muted);min-width:20px;">#${i + 1}</span>
+                    <div style="flex:1;overflow:hidden;min-width:0;">
+                        <div style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(ep.endpoint || '')}</div>
+                        <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">${ep.requestCount} requests · ${ep.averageDurationMs ? ep.averageDurationMs.toFixed(0) : 0}ms avg · ${ep.successRate ? ep.successRate.toFixed(1) : 0}% success</div>
+                    </div>
+                    <span style="font-size:12px;color:var(--text-secondary);font-variant-numeric:tabular-nums;">${ep.requestCount}</span>
+                </div>`).join('');
+
+            // Slowest requests
+            const slowest = stats.slowestRequests || [];
+            document.getElementById('slowestList').innerHTML = slowest.length === 0
+                ? '<div style="color:var(--text-muted);font-size:12px;padding:20px;text-align:center;">No data available</div>'
+                : slowest.map((r, i) => `
+                <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="viewTransaction('${escapeHtml(r.requestId)}')">
+                    <span style="font-size:11px;color:var(--text-muted);min-width:20px;">#${i + 1}</span>
+                    <div style="flex:1;overflow:hidden;min-width:0;">
+                        <div style="font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(r.url || '')}</div>
+                        <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">${r.method} · ${new Date(r.timestamp).toLocaleString()}</div>
+                    </div>
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#ef4444;">${r.durationMs}ms</span>
+                </div>`).join('');
+        }
+
+        // ─── LOAD ERRORS ─────────────────────────────────────────
+        async function loadErrors() {
+            try {
+                const res = await fetch('/api/httptransactions/failed?pageSize=50');
+                const data = await res.json();
+                renderTransactionTable(data.data || [], 'errorTableBody', true);
+            } catch {
+                document.getElementById('errorTableBody').innerHTML =
+                    '<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">❌</div><div class="empty-state-title">Failed to load errors</div></div></td></tr>';
+            }
+        }
+
+        // ─── VIEW TRANSACTION DETAIL ─────────────────────────────
+        async function viewTransaction(requestId) {
+            document.getElementById('modalTitle').textContent = 'Transaction: ' + requestId;
+            document.getElementById('modalBody').innerHTML =
+                '<div style="color:var(--text-muted);text-align:center;padding:40px;">Loading...</div>';
+            document.getElementById('detailModal').classList.add('show');
+
+            try {
+                const res = await fetch('/api/httptransactions/' + encodeURIComponent(requestId));
+                if (!res.ok) throw new Error('Not found');
+                const t = await res.json();
+
+                const statusColor = t.statusCode >= 500 ? '#ef4444' : t.statusCode >= 400 ? '#f59e0b' : '#10b981';
+                let reqHeaders = '', resHeaders = '';
+                try { reqHeaders = JSON.stringify(JSON.parse(t.requestHeaders || '{}'), null, 2); } catch { reqHeaders = t.requestHeaders || '—'; }
+                try { resHeaders = JSON.stringify(JSON.parse(t.responseHeaders || '{}'), null, 2); } catch { resHeaders = t.responseHeaders || '—'; }
+
+                document.getElementById('modalBody').innerHTML = `
+                    <div class="detail-section">
+                        <div class="detail-section-title">Overview</div>
+                        <div class="detail-grid">
+                            <div class="detail-item"><div class="detail-key">Request ID</div><div class="detail-value">${escapeHtml(t.requestId)}</div></div>
+                            <div class="detail-item"><div class="detail-key">Status Code</div><div class="detail-value" style="color:${statusColor}">${t.statusCode}</div></div>
+                            <div class="detail-item"><div class="detail-key">Method</div><div class="detail-value">${t.method}</div></div>
+                            <div class="detail-item"><div class="detail-key">Duration</div><div class="detail-value">${t.durationMs}ms</div></div>
+                            <div class="detail-item"><div class="detail-key">Timestamp</div><div class="detail-value">${new Date(t.timestamp).toLocaleString()}</div></div>
+                            <div class="detail-item"><div class="detail-key">Success</div><div class="detail-value" style="color:${t.success ? '#10b981' : '#ef4444'}">${t.success ? '✓ Yes' : '✗ No'}</div></div>
+                            <div class="detail-item"><div class="detail-key">IP Address</div><div class="detail-value">${escapeHtml(t.ipAddress || '—')}</div></div>
+                            <div class="detail-item"><div class="detail-key">User Agent</div><div class="detail-value" style="font-size:11px;">${escapeHtml((t.userAgent || '—').substring(0, 80))}</div></div>
+                        </div>
+                    </div>
+                    <div class="detail-section">
+                        <div class="detail-section-title">URL</div>
+                        <div class="code-block">${escapeHtml(t.url)}</div>
+                    </div>
+                    ${t.requestHeaders ? `<div class="detail-section">
+                        <div class="detail-section-title">Request Headers</div>
+                        <div class="code-block">${escapeHtml(reqHeaders)}</div>
+                    </div>` : ''}
+                    ${t.requestBody ? `<div class="detail-section">
+                        <div class="detail-section-title">Request Body (${t.requestSize || 0} bytes)</div>
+                        <div class="code-block">${escapeHtml(tryFormatJson(t.requestBody))}</div>
+                    </div>` : ''}
+                    ${t.responseHeaders ? `<div class="detail-section">
+                        <div class="detail-section-title">Response Headers</div>
+                        <div class="code-block">${escapeHtml(resHeaders)}</div>
+                    </div>` : ''}
+                    ${t.responseBody ? `<div class="detail-section">
+                        <div class="detail-section-title">Response Body (${t.responseSize || 0} bytes)</div>
+                        <div class="code-block">${escapeHtml(tryFormatJson(t.responseBody))}</div>
+                    </div>` : ''}
+                    ${t.errorMessage ? `<div class="detail-section">
+                        <div class="detail-section-title">Error</div>
+                        <div class="code-block" style="color:#ef4444;">${escapeHtml(t.errorMessage)}</div>
+                    </div>` : ''}
+                    ${t.stackTrace ? `<div class="detail-section">
+                        <div class="detail-section-title">Stack Trace</div>
+                        <div class="code-block" style="color:#f87171;font-size:10px;">${escapeHtml(t.stackTrace)}</div>
+                    </div>` : ''}
+                `;
+            } catch (err) {
+                document.getElementById('modalBody').innerHTML =
+                    '<div style="color:#ef4444;text-align:center;padding:40px;">Failed to load transaction details</div>';
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('detailModal').classList.remove('show');
+        }
+
+        // ─── PAGINATION ──────────────────────────────────────────
+        function changePage(delta) {
+            currentPage = Math.max(1, currentPage + delta);
+            if (totalPages > 0 && currentPage > totalPages) currentPage = totalPages;
+            document.getElementById('currentPageBtn').textContent = currentPage;
+            loadTransactions();
+        }
+
+        function goToPage(target) {
+            if (target === 'first') {
+                currentPage = 1;
+            } else if (target === 'last' && totalPages > 0) {
+                currentPage = totalPages;
+            }
+            document.getElementById('currentPageBtn').textContent = currentPage;
+            loadTransactions();
+        }
+
+        function debouncedSearch() {
+            clearTimeout(searchDebounceTimer);
+            currentPage = 1;
+            searchDebounceTimer = setTimeout(loadTransactions, 400);
+        }
+
+        // ─── TOAST NOTIFICATIONS ─────────────────────────────────
+        function showToast(message, type = 'info') {
+            const icons = { info: 'ℹ️', warning: '⚠️', success: '✅', error: '❌' };
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `<span>${icons[type] || 'ℹ️'}</span> ${message}`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(20px)';
+                toast.style.transition = 'all 0.3s';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // ─── UTILITIES ───────────────────────────────────────────
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function tryFormatJson(str) {
+            try { return JSON.stringify(JSON.parse(str), null, 2); } catch { return str; }
+        }
+
+        // Keyboard shortcut: Escape closes modal
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+        // ─── HEALTH PAGE ─────────────────────────────────────────
+        async function loadHealth() {
+            try {
+                const res = await fetch('/api/health/detailed');
+                const data = await res.json();
+                const ok = data.status === 'healthy';
+
+                const icon  = document.getElementById('healthStatusIcon');
+                const label = document.getElementById('healthStatusLabel');
+                const desc  = document.getElementById('healthStatusDesc');
+
+                icon.textContent  = ok ? '✅' : '❌';
+                label.textContent = ok ? 'System Healthy' : 'System Unhealthy';
+                label.style.color = ok ? 'var(--accent-green)' : 'var(--accent-red)';
+                desc.textContent  = ok ? 'All services are operational and responding normally.' : 'One or more services have reported an issue.';
+
+                // Badges
+                const uptime = data.uptimeSeconds || 0;
+                const days   = Math.floor(uptime / 86400);
+                const hrs    = Math.floor((uptime % 86400) / 3600);
+                const mins   = Math.floor((uptime % 3600) / 60);
+                document.getElementById('healthVersion').textContent   = 'Version: ' + (data.version || '1.0.0');
+                document.getElementById('healthUptime').textContent    = `Uptime: ${days}d ${hrs}h ${mins}m`;
+                document.getElementById('healthTimestamp').textContent = 'Last check: ' + new Date().toLocaleTimeString();
+
+                // Service cards
+                const db  = data.services?.database;
+                const log = data.services?.httpLogging;
+                setServiceCard('svcDatabase', 'svcDatabaseMsg', db?.status, db?.message);
+                setServiceCard('svcLogging',  'svcLoggingMsg',  log?.status, log?.message);
+                document.getElementById('svcQueue').textContent = '—';
+                document.getElementById('svcEnv').textContent  = 'Production';
+            } catch(err) {
+                document.getElementById('healthStatusIcon').textContent  = '🔌';
+                document.getElementById('healthStatusLabel').textContent = 'Unreachable';
+                document.getElementById('healthStatusLabel').style.color = 'var(--accent-red)';
+                document.getElementById('healthStatusDesc').textContent  = 'Could not contact the health API: ' + err.message;
+            }
+        }
+
+        function setServiceCard(valueId, msgId, status, message) {
+            const isOk = status === 'operational';
+            document.getElementById(valueId).textContent = isOk ? 'Operational' : 'Unavailable';
+            document.getElementById(valueId).style.color = isOk ? 'var(--accent-green)' : 'var(--accent-red)';
+            document.getElementById(valueId).style.fontSize = '14px';
+            if (msgId) document.getElementById(msgId).textContent = message || '';
+        }
+
+        async function testProbe(url, resultId) {
+            const el = document.getElementById(resultId);
+            el.textContent = '⏳';
+            try {
+                const start = performance.now();
+                const res = await fetch(url);
+                const ms = Math.round(performance.now() - start);
+                el.textContent = res.ok ? `✅ ${res.status} (${ms}ms)` : `❌ ${res.status}`;
+                el.style.color = res.ok ? 'var(--accent-green)' : 'var(--accent-red)';
+            } catch {
+                el.textContent = '❌ Offline';
+                el.style.color = 'var(--accent-red)';
+            }
+        }
+
+        function copyText(text) {
+            navigator.clipboard.writeText(window.location.origin + text).then(() => {
+                showToast('✅ URL copied to clipboard', 'success');
+            });
+        }
+
+        // ─── API DOCS PAGE ───────────────────────────────────────
+        function loadApiDocs() {
+            const groups = [
+                {
+                    name: '📊 Statistics', color: 'var(--accent-blue)',
+                    endpoints: [
+                        { method:'GET', path:'/api/statistics',            desc:'Aggregated stats (total, success rate, P95, P99) for a time range' },
+                        { method:'GET', path:'/api/statistics/daily',      desc:'Statistics for the last 24 hours' },
+                        { method:'GET', path:'/api/statistics/weekly',     desc:'Statistics for the last 7 days' },
+                        { method:'GET', path:'/api/statistics/monthly',    desc:'Statistics for the last 30 days' },
+                        { method:'GET', path:'/api/statistics/summary',    desc:'Lightweight summary for dashboard widgets' },
+                        { method:'GET', path:'/api/statistics/performance',desc:'Response time percentiles and throughput metrics' },
+                        { method:'GET', path:'/api/statistics/errors',     desc:'Error analysis by status code and endpoint' },
+                        { method:'GET', path:'/api/statistics/endpoints',  desc:'Slowest and most-accessed endpoint breakdown' },
+                    ]
+                },
+                {
+                    name: '📋 Transactions', color: 'var(--accent-purple)',
+                    endpoints: [
+                        { method:'GET',  path:'/api/httptransactions/recent',           desc:'Recent transactions (default: last 24h). ?hoursBack=&pageSize=' },
+                        { method:'POST', path:'/api/httptransactions/search',           desc:'Full-text search with filters (method, status, URL, date range)' },
+                        { method:'GET',  path:'/api/httptransactions/failed',           desc:'All failed requests (status ≥ 400)' },
+                        { method:'GET',  path:'/api/httptransactions/slow',             desc:'Slow requests above a threshold. ?thresholdMs=1000' },
+                        { method:'GET',  path:'/api/httptransactions/by-method/{method}',desc:'Filter by HTTP method (GET, POST, PUT, DELETE, PATCH)' },
+                        { method:'GET',  path:'/api/httptransactions/by-status/{code}', desc:'Filter by status code (200, 404, 500…)' },
+                        { method:'GET',  path:'/api/httptransactions/{requestId}',      desc:'Retrieve a single transaction by its request ID' },
+                    ]
+                },
+                {
+                    name: '💚 Health', color: 'var(--accent-green)',
+                    endpoints: [
+                        { method:'GET', path:'/api/health',          desc:'Overall health status — returns 200 or 503' },
+                        { method:'GET', path:'/api/health/detailed', desc:'Version, uptime, and per-service status' },
+                        { method:'GET', path:'/api/health/live',     desc:'Liveness probe — always 200 if process is running' },
+                        { method:'GET', path:'/api/health/ready',    desc:'Readiness probe — 200 only when DB is reachable' },
+                    ]
+                }
+            ];
+
+            const methodColors = { GET:'method-GET', POST:'method-POST', PUT:'method-PUT', DELETE:'method-DELETE', PATCH:'method-PATCH' };
+
+            document.getElementById('apiEndpointGroups').innerHTML = groups.map(g => `
+                <div class="card" style="margin-bottom:20px;">
+                    <div class="card-header">
+                        <div>
+                            <div class="card-title" style="font-size:15px;">${g.name}</div>
+                            <div class="card-subtitle">${g.endpoints.length} endpoint${g.endpoints.length>1?'s':''}</div>
+                        </div>
+                        <div style="width:4px;height:32px;border-radius:4px;background:${g.color};"></div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:0;">
+                        ${g.endpoints.map((ep, i) => `
+                        <div class="api-endpoint-row" style="border-top:${i>0?'1px solid var(--border)':'none'};">
+                            <span class="method-badge ${methodColors[ep.method]||'method-GET'}">${ep.method}</span>
+                            <code class="endpoint-path">${ep.path}</code>
+                            <span class="endpoint-desc">${ep.desc}</span>
+                            <button class="copy-btn" onclick="copyText('${ep.path.split('{')[0]}')">Copy URL</button>
+                        </div>`).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+    </script>
+
+    <style>
+        /* ─── HEALTH PROBE ROWS ─── */
+        .health-probe-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .health-probe-row:hover { background: var(--bg-primary); }
+        .probe-result { font-size: 12px; font-family: 'JetBrains Mono', monospace; min-width: 100px; text-align: right; }
+        .copy-btn {
+            padding: 4px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 11px;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .copy-btn:hover { border-color: var(--accent-blue); color: var(--accent-blue); background: var(--glow-blue); }
+        /* ─── API ENDPOINT ROWS ─── */
+        .api-endpoint-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 4px;
+            transition: background 0.15s;
+        }
+        .api-endpoint-row:hover { background: var(--bg-primary); border-radius: 8px; }
+        .endpoint-path {
+            flex: 1;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--accent-cyan);
+        }
+        .endpoint-desc {
+            font-size: 12px;
+            color: var(--text-muted);
+            max-width: 360px;
+        }
+    </style>
+</body>
+</html>
