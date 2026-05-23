@@ -8,14 +8,14 @@ namespace NET_Tracker.Controllers
     /// MVC controller for the HTTP Request/Response Logger Dashboard.
     /// Serves the interactive monitoring dashboard UI.
     /// </summary>
-    public class DashboardController : Controller
+    public class TrackerController : Controller
     {
         private readonly IHttpTransactionLogger _logger;
-        private readonly ILogger<DashboardController> _appLogger;
+        private readonly ILogger<TrackerController> _appLogger;
 
-        public DashboardController(
+        public TrackerController(
             IHttpTransactionLogger logger,
-            ILogger<DashboardController> appLogger)
+            ILogger<TrackerController> appLogger)
         {
             _logger = logger;
             _appLogger = appLogger;
@@ -25,10 +25,10 @@ namespace NET_Tracker.Controllers
         /// Renders the main dashboard view.
         /// All data is loaded via AJAX from the API endpoints.
         /// </summary>
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
             ViewData["Title"] = "HTTP Request/Response Logger Dashboard";
-            return View();
+            return await Task.FromResult(View());
         }
     }
 }

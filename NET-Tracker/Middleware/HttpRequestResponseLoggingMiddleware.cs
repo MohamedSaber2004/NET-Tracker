@@ -210,6 +210,7 @@ namespace NET_Tracker.Middleware
                 RequestSize = (int)(request.ContentLength ?? 0),
                 IpAddress = context.Connection.RemoteIpAddress?.ToString(),
                 UserAgent = request.Headers["User-Agent"].ToString(),
+                UserId = context.User?.Identity?.IsAuthenticated == true ? (context.User.Identity.Name ?? context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value) : null,
                 Timestamp = DateTime.UtcNow
             };
         }

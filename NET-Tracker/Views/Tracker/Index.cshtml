@@ -11,8 +11,9 @@
     <title>NET-Tracker | HTTP Logger Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"></noscript>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
     <style>
         :root {
             --bg-primary: #0a0e1a;
@@ -935,10 +936,10 @@
         </div>
         <nav class="sidebar-nav">
             <div class="nav-section-title">Monitoring</div>
-            <a href="#" class="nav-item active" onclick="showSection('overview'); return false;" id="nav-overview">
+            <a href="#" class="nav-item" onclick="showSection('overview'); return false;" id="nav-overview">
                 <span class="nav-item-icon">📊</span> Overview
             </a>
-            <a href="#" class="nav-item" onclick="showSection('transactions'); return false;" id="nav-transactions">
+            <a href="#" class="nav-item active" onclick="showSection('transactions'); return false;" id="nav-transactions">
                 <span class="nav-item-icon">📋</span> Transactions
             </a>
             <a href="#" class="nav-item" onclick="showSection('analytics'); return false;" id="nav-analytics">
@@ -969,8 +970,8 @@
         <!-- Topbar -->
         <div class="topbar">
             <div class="topbar-left">
-                <h1 id="sectionTitle">Overview</h1>
-                <div class="subtitle" id="sectionSubtitle">Real-time HTTP request monitoring</div>
+                <h1 id="sectionTitle">Transactions</h1>
+                <div class="subtitle" id="sectionSubtitle">Browse and search HTTP transaction logs</div>
             </div>
             <div class="topbar-right">
                 <button class="time-range-btn active" onclick="setTimeRange(1, this)" id="range-1h">1H</button>
@@ -985,7 +986,7 @@
 
         <div class="page-content">
             <!-- ─── OVERVIEW SECTION ─── -->
-            <div id="section-overview">
+            <div id="section-overview" style="display:none;">
                 <!-- Metric Cards -->
                 <div class="metrics-grid" id="metricsGrid">
                     <div class="metric-card blue">
@@ -1072,7 +1073,7 @@
             </div>
 
             <!-- ─── TRANSACTIONS SECTION ─── -->
-            <div id="section-transactions" style="display:none;">
+            <div id="section-transactions">
                 <div class="card table-card">
                     <div class="card-header">
                         <div>
@@ -1355,7 +1356,7 @@
 
     <script>
         // ─── STATE ───────────────────────────────────────────────
-        let currentSection = 'overview';
+        let currentSection = 'transactions';
         let currentPage = 1;
         let totalPages = 0;
         let pageSize = 25;
@@ -1747,7 +1748,11 @@
             const filter = {
                 pageNumber: currentPage,
                 pageSize: pageSize,
-                sortBy: 'newest'
+                sortBy: 'newest',
+                // Performance: skip heavy body/header columns in the list view.
+                // These are only fetched individually via the detail modal.
+                includeRequestBody: false,
+                includeResponseBody: false
             };
 
             if (urlSearch) filter.searchText = urlSearch;

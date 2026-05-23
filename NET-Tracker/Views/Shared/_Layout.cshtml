@@ -4,9 +4,12 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - NET_Tracker</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/NET_Tracker.styles.css" asp-append-version="true" />
+    <link rel="preload" href="~/lib/bootstrap/dist/css/bootstrap.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" /></noscript>
+    <link rel="preload" href="~/css/site.css" as="style" onload="this.onload=null;this.rel='stylesheet'" asp-append-version="true" />
+    <noscript><link rel="stylesheet" href="~/css/site.css" asp-append-version="true" /></noscript>
+    <link rel="preload" href="~/NET_Tracker.styles.css" as="style" onload="this.onload=null;this.rel='stylesheet'" asp-append-version="true" />
+    <noscript><link rel="stylesheet" href="~/NET_Tracker.styles.css" asp-append-version="true" /></noscript>
 </head>
 <body>
     <header>
@@ -44,9 +47,9 @@
             &copy; 2026 - NET_Tracker - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
     </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js" defer></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js" defer></script>
+    <script src="~/js/site.js" asp-append-version="true" defer></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

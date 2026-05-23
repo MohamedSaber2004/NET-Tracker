@@ -102,6 +102,14 @@ namespace NET_Tracker.Data
                 .IsUnique(false)
                 .HasDatabaseName("IX_HttpTransactions_Timestamp_Success");
 
+            // Covering index for the default list view query:
+            // ORDER BY Timestamp DESC + optional filters on StatusCode/Method/Success/DurationMs.
+            // Including lightweight non-key columns avoids a key lookup back to the clustered index
+            // for the columns used in SELECT projections (list view omits bodies).
+            entity.HasIndex(x => new { x.Timestamp, x.StatusCode, x.Method, x.Success, x.DurationMs })
+                .IsUnique(false)
+                .HasDatabaseName("IX_HttpTransactions_List_Covering");
+
             // Table naming
             entity.ToTable("HttpTransactions");
 

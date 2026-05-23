@@ -7,8 +7,9 @@
     <RootNamespace>NET_Tracker</RootNamespace>
     <PackageId>NetTracker.Core</PackageId>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <IsPackable>true</IsPackable>
     <Title>Logger</Title>
-    <Version>1.0.0</Version>
+    <Version>2.0.1</Version>
     <Authors>Mohamed Saber</Authors>
     <Company>Mohamed Saber</Company>
     <Product>NET-Tracker</Product>
@@ -17,6 +18,10 @@ Provides a built-in real-time dashboard to monitor, search, and analyze all HTTP
 transactions in your application. Supports SQL Server storage, async logging,
 automatic log retention, and full integration via a single appsettings.json config block.
 Simply add AddNetTracker() and UseNetTracker() to your Program.cs to get started.</Description>
+    <RepositoryUrl>https://github.com/MohamedSaber2004/NET-Tracker</RepositoryUrl>
+    <PackAsTool>False</PackAsTool>
+    <PackageOutputPath>bin\Debug\</PackageOutputPath>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -30,6 +35,13 @@ Simply add AddNetTracker() and UseNetTracker() to your Program.cs to get started
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>

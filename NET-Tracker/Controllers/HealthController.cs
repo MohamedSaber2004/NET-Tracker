@@ -140,9 +140,9 @@ namespace NET_Tracker.Controllers
         /// <returns>Liveness status</returns>
         [HttpGet("live")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult<object> Live()
+        public async Task<ActionResult<object>> Live()
         {
-            return Ok(new { status = "alive", timestamp = DateTime.UtcNow });
+            return await Task.FromResult(Ok(new { status = "alive", timestamp = DateTime.UtcNow }));
         }
 
         /// <summary>
