@@ -15,6 +15,12 @@ namespace NET_Tracker.Configuration
         public bool Enabled { get; set; } = true;
 
         /// <summary>
+        /// Enable or disable the built-in dashboard UI.
+        /// Set to false on public hosting if you only want to use the logging system without exposing logs.
+        /// </summary>
+        public bool EnableDashboardUI { get; set; } = true;
+
+        /// <summary>
         /// Log the request body content.
         /// Set to false for large binary uploads to reduce storage.
         /// </summary>

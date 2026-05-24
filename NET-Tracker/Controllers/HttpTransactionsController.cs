@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using NET_Tracker.Filters;
 using NET_Tracker.Models;
 using NET_Tracker.Services;
 using NET_Tracker.Services.Interfaces;
@@ -12,6 +13,7 @@ namespace NET_Tracker.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Produces("application/json")]
+    [DashboardAccessFilter]
     public class HttpTransactionsController : ControllerBase
     {
         private readonly IHttpTransactionLogger _logger;

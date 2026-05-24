@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using NET_Tracker.Filters;
 using NET_Tracker.Services;
 using NET_Tracker.Services.Interfaces;
 
@@ -8,6 +9,7 @@ namespace NET_Tracker.Controllers
     /// MVC controller for the HTTP Request/Response Logger Dashboard.
     /// Serves the interactive monitoring dashboard UI.
     /// </summary>
+    [DashboardAccessFilter]
     public class TrackerController : Controller
     {
         private readonly IHttpTransactionLogger _logger;

@@ -15,6 +15,19 @@ namespace NET_Tracker.Configuration
         public bool Enabled { get; set; } = true;
 
         /// <summary>
+        /// Enable or disable the built-in dashboard UI.
+        /// Set to false on public hosting if you only want to use the logging system without exposing logs.
+        /// </summary>
+        public bool EnableDashboardUI { get; set; } = true;
+
+        /// <summary>
+        /// If true, the dashboard is accessible from any host.
+        /// If false, the dashboard is only accessible from localhost (127.0.0.1 or ::1).
+        /// Useful for denying access when hosted on a public URL.
+        /// </summary>
+        public bool AllowRemoteDashboardAccess { get; set; } = true;
+
+        /// <summary>
         /// Log the request body content.
         /// Set to false for large binary uploads to reduce storage.
         /// </summary>
