@@ -66,8 +66,24 @@
             border-right: 1px solid var(--border);
             display: flex;
             flex-direction: column;
-            z-index: 100;
+            z-index: 1000;
             transition: transform 0.3s ease;
+        }
+
+        .sidebar-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 999;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .sidebar-backdrop.active {
+            display: block;
+            opacity: 1;
         }
 
         .sidebar-logo {
@@ -75,7 +91,28 @@
             border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 12px;
+        }
+
+        .sidebar-close {
+            display: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+
+        .sidebar-close:hover {
+            border-color: var(--accent-red);
+            color: var(--accent-red);
         }
 
         .logo-icon {
@@ -197,6 +234,26 @@
             position: sticky;
             top: 0;
             z-index: 50;
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .mobile-toggle {
+            display: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-primary);
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
         }
 
         .topbar-left h1 {
@@ -354,6 +411,7 @@
             border-radius: 16px;
             padding: 20px;
             transition: all 0.3s;
+            overflow-x: auto;
         }
 
         .card:hover { border-color: var(--border-accent); }
@@ -363,6 +421,8 @@
             align-items: center;
             justify-content: space-between;
             margin-bottom: 16px;
+            flex-wrap: wrap;
+            gap: 12px;
         }
 
         .card-title {
@@ -396,7 +456,7 @@
             50% { opacity: 0.7; }
         }
 
-        .chart-container { position: relative; height: 220px; }
+        .chart-container { position: relative; height: 220px; min-width: 0; }
 
         /* ─── STATUS CODE BREAKDOWN ─── */
         .status-breakdown {
@@ -455,6 +515,7 @@
             display: flex;
             gap: 10px;
             margin-bottom: 16px;
+            flex-wrap: wrap;
         }
 
         .search-input {
@@ -468,6 +529,7 @@
             font-family: 'Inter', sans-serif;
             outline: none;
             transition: border-color 0.2s;
+            min-width: 200px;
         }
 
         .search-input:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
@@ -487,9 +549,15 @@
 
         .filter-select:focus { border-color: var(--accent-blue); }
 
+        .transactions-table-wrap {
+            width: 100%;
+            overflow-x: auto;
+        }
+
         .transactions-table {
             width: 100%;
             border-collapse: collapse;
+            min-width: 800px;
         }
 
         .transactions-table th {
@@ -817,6 +885,7 @@
             margin-top: 16px;
             padding-top: 16px;
             border-top: 1px solid var(--border);
+            flex-wrap: wrap;
         }
 
         .page-btn {
@@ -850,10 +919,23 @@
             .perf-grid { grid-template-columns: 1fr; }
         }
 
-        @@media (max-width: 768px) {
+        @@media (max-width: 992px) {
+            .topbar { padding: 0 16px; height: auto; padding-top: 12px; padding-bottom: 12px; flex-direction: column; align-items: flex-start; gap: 16px; }
+            .topbar-right { width: 100%; overflow-x: auto; padding-bottom: 4px; }
+            .page-content { padding: 16px; }
+        }
+
+        @@media (max-width: 1024px) {
             .sidebar { transform: translateX(-240px); }
+            .sidebar.active { transform: translateX(0); }
+            .sidebar-close { display: flex; }
             .main-content { margin-left: 0; }
+            .mobile-toggle { display: flex; }
             .metrics-grid { grid-template-columns: 1fr; }
+            .detail-grid { grid-template-columns: 1fr; }
+            .modal-box { max-width: 100%; margin: 0; height: 100%; max-height: 100%; border-radius: 0; }
+            .modal-overlay { padding: 0; }
+            .modal-header { border-radius: 0; }
         }
 
         /* ─── SPIN ANIMATION ─── */
@@ -928,32 +1010,35 @@
     <!-- ─── SIDEBAR ─── -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-logo">
-            <div class="logo-icon">🔍</div>
-            <div>
-                <div class="logo-text">NET-Tracker</div>
-                <div class="logo-version">HTTP Logger v1.0</div>
+            <div style="display:flex;align-items:center;gap:12px;">
+                <div class="logo-icon">🔍</div>
+                <div>
+                    <div class="logo-text">NET-Tracker</div>
+                    <div class="logo-version">HTTP Logger v1.0</div>
+                </div>
             </div>
+            <button class="sidebar-close" id="sidebarClose" onclick="toggleSidebar(false)">✕</button>
         </div>
         <nav class="sidebar-nav">
             <div class="nav-section-title">Monitoring</div>
-            <a href="#" class="nav-item" onclick="showSection('overview'); return false;" id="nav-overview">
+            <a href="#" class="nav-item" onclick="showSection('overview'); toggleSidebar(false); return false;" id="nav-overview">
                 <span class="nav-item-icon">📊</span> Overview
             </a>
-            <a href="#" class="nav-item active" onclick="showSection('transactions'); return false;" id="nav-transactions">
+            <a href="#" class="nav-item active" onclick="showSection('transactions'); toggleSidebar(false); return false;" id="nav-transactions">
                 <span class="nav-item-icon">📋</span> Transactions
             </a>
-            <a href="#" class="nav-item" onclick="showSection('analytics'); return false;" id="nav-analytics">
+            <a href="#" class="nav-item" onclick="showSection('analytics'); toggleSidebar(false); return false;" id="nav-analytics">
                 <span class="nav-item-icon">📈</span> Analytics
             </a>
-            <a href="#" class="nav-item" onclick="showSection('errors'); return false;" id="nav-errors">
+            <a href="#" class="nav-item" onclick="showSection('errors'); toggleSidebar(false); return false;" id="nav-errors">
                 <span class="nav-item-icon">⚠️</span> Errors
             </a>
 
             <div class="nav-section-title">System</div>
-            <a href="#" class="nav-item" onclick="showSection('health'); return false;" id="nav-health">
+            <a href="#" class="nav-item" onclick="showSection('health'); toggleSidebar(false); return false;" id="nav-health">
                 <span class="nav-item-icon">💚</span> Health
             </a>
-            <a href="#" class="nav-item" onclick="showSection('apidocs'); return false;" id="nav-apidocs">
+            <a href="#" class="nav-item" onclick="showSection('apidocs'); toggleSidebar(false); return false;" id="nav-apidocs">
                 <span class="nav-item-icon">🔗</span> API Docs
             </a>
         </nav>
@@ -965,13 +1050,19 @@
         </div>
     </aside>
 
+    <!-- Sidebar Backdrop for Mobile -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleSidebar(false)"></div>
+
     <!-- ─── MAIN CONTENT ─── -->
     <main class="main-content">
         <!-- Topbar -->
         <div class="topbar">
             <div class="topbar-left">
-                <h1 id="sectionTitle">Transactions</h1>
-                <div class="subtitle" id="sectionSubtitle">Browse and search HTTP transaction logs</div>
+                <button class="mobile-toggle" onclick="toggleSidebar(true)">☰</button>
+                <div>
+                    <h1 id="sectionTitle">Transactions</h1>
+                    <div class="subtitle" id="sectionSubtitle">Browse and search HTTP transaction logs</div>
+                </div>
             </div>
             <div class="topbar-right">
                 <button class="time-range-btn active" onclick="setTimeRange(1, this)" id="range-1h">1H</button>
@@ -1083,7 +1174,7 @@
                             </div>
                             <div class="card-subtitle" id="transactionCount">Loading transactions...</div>
                         </div>
-                        <div style="display:flex;gap:8px;align-items:center;">
+                        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
                             <span id="txLoadingIndicator" style="display:none;font-size:12px;color:var(--text-muted);">⏳ Loading...</span>
                             <button class="refresh-btn" onclick="loadTransactions()" id="txRefreshBtn">↻ Refresh</button>
                         </div>
@@ -1108,29 +1199,31 @@
                         </select>
                         <button class="page-btn" onclick="clearFilters()" id="clearFiltersBtn" style="display:none;white-space:nowrap;">✕ Clear</button>
                     </div>
-                    <table class="transactions-table">
-                        <thead>
-                            <tr>
-                                <th>Method</th>
-                                <th>URL</th>
-                                <th>Status</th>
-                                <th>Duration</th>
-                                <th>IP Address</th>
-                                <th>Timestamp</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody id="transactionTableBody">
-                            <tr>
-                                <td colspan="7">
-                                    <div class="empty-state">
-                                        <div class="empty-state-icon">⏳</div>
-                                        <div class="empty-state-title">Loading transactions...</div>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div class="transactions-table-wrap">
+                        <table class="transactions-table">
+                            <thead>
+                                <tr>
+                                    <th>Method</th>
+                                    <th>URL</th>
+                                    <th>Status</th>
+                                    <th>Duration</th>
+                                    <th>IP Address</th>
+                                    <th>Timestamp</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactionTableBody">
+                                <tr>
+                                    <td colspan="7">
+                                        <div class="empty-state">
+                                            <div class="empty-state-icon">⏳</div>
+                                            <div class="empty-state-title">Loading transactions...</div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                     <div class="pagination" id="paginationWrap">
                         <button class="page-btn" id="firstPageBtn" onclick="goToPage('first')" disabled>« First</button>
                         <button class="page-btn" id="prevPageBtn" onclick="changePage(-1)" disabled>← Prev</button>
@@ -1368,11 +1461,38 @@
         let searchDebounceTimer = null;
         let lastStats = null;
 
+        function toggleSidebar(force) {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebarBackdrop');
+            const isActive = force !== undefined ? force : !sidebar.classList.contains('active');
+
+            if (isActive) {
+                sidebar.classList.add('active');
+                backdrop.classList.add('active');
+                if (window.innerWidth <= 768) {
+                    document.body.style.overflow = 'hidden';
+                }
+            } else {
+                sidebar.classList.remove('active');
+                backdrop.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        }
+
         // ─── INITIALIZATION ──────────────────────────────────────
         document.addEventListener('DOMContentLoaded', () => {
             initCharts();
             refreshAll();
             startAutoRefresh();
+
+            // Handle connection changes
+            window.addEventListener('online', () => {
+                showToast('🌐 Connection restored!', 'success');
+                refreshAll();
+            });
+            window.addEventListener('offline', () => {
+                showToast('🔌 Connection lost. Please check your network.', 'warning');
+            });
         });
 
         function startAutoRefresh() {
@@ -1456,6 +1576,14 @@
             }
         }
 
+        function getErrorMessage(err) {
+            if (!navigator.onLine) return 'You are currently offline. Please check your internet connection.';
+            if (err.name === 'TypeError' && err.message === 'Failed to fetch') {
+                return 'Network error: Could not reach the server. Ensure the application is running.';
+            }
+            return err.message || 'An unexpected error occurred.';
+        }
+
         // ─── LOAD STATISTICS ─────────────────────────────────────
         async function loadStats() {
             try {
@@ -1473,7 +1601,9 @@
                 updateTimelineChart(stats);
             } catch (err) {
                 console.error('Failed to load stats:', err);
-                showToast('⚠️ Could not load statistics', 'warning');
+                if (navigator.onLine) {
+                    showToast('⚠️ ' + getErrorMessage(err), 'warning');
+                }
             }
         }
 
@@ -1826,7 +1956,7 @@
                 tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state">
                     <div class="empty-state-icon">🔌</div>
                     <div class="empty-state-title" style="color:var(--accent-red);">Connection Failed</div>
-                    <div class="empty-state-sub" style="margin-top:8px;">${escapeHtml(err.message)}</div>
+                    <div class="empty-state-sub" style="margin-top:8px;">${escapeHtml(getErrorMessage(err))}</div>
                     <button onclick="loadTransactions()" style="margin-top:16px;padding:8px 20px;border-radius:8px;border:1px solid var(--accent-blue);background:var(--glow-blue);color:var(--accent-blue);cursor:pointer;font-family:inherit;font-size:12px;">↻ Retry</button>
                 </div></td></tr>`;
                 document.getElementById('transactionCount').textContent = 'Connection error';
@@ -1927,11 +2057,12 @@
         async function loadErrors() {
             try {
                 const res = await fetch('/api/httptransactions/failed?pageSize=50');
+                if (!res.ok) throw new Error('Failed to load errors');
                 const data = await res.json();
                 renderTransactionTable(data.data || [], 'errorTableBody', true);
-            } catch {
+            } catch (err) {
                 document.getElementById('errorTableBody').innerHTML =
-                    '<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">❌</div><div class="empty-state-title">Failed to load errors</div></div></td></tr>';
+                    `<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">❌</div><div class="empty-state-title">Failed to load errors</div><div class="empty-state-sub">${escapeHtml(getErrorMessage(err))}</div></div></td></tr>`;
             }
         }
 
@@ -1997,7 +2128,10 @@
                 `;
             } catch (err) {
                 document.getElementById('modalBody').innerHTML =
-                    '<div style="color:#ef4444;text-align:center;padding:40px;">Failed to load transaction details</div>';
+                    `<div style="color:#ef4444;text-align:center;padding:40px;">
+                        <strong>Failed to load transaction details</strong><br>
+                        <span style="font-size:12px;color:var(--text-muted);">${escapeHtml(getErrorMessage(err))}</span>
+                    </div>`;
             }
         }
 
@@ -2066,6 +2200,7 @@
         async function loadHealth() {
             try {
                 const res = await fetch('/api/health/detailed');
+                if (!res.ok) throw new Error('Health API returned ' + res.status);
                 const data = await res.json();
                 const ok = data.status === 'healthy';
 
@@ -2098,7 +2233,7 @@
                 document.getElementById('healthStatusIcon').textContent  = '🔌';
                 document.getElementById('healthStatusLabel').textContent = 'Unreachable';
                 document.getElementById('healthStatusLabel').style.color = 'var(--accent-red)';
-                document.getElementById('healthStatusDesc').textContent  = 'Could not contact the health API: ' + err.message;
+                document.getElementById('healthStatusDesc').textContent  = getErrorMessage(err);
             }
         }
 
@@ -2119,8 +2254,9 @@
                 const ms = Math.round(performance.now() - start);
                 el.textContent = res.ok ? `✅ ${res.status} (${ms}ms)` : `❌ ${res.status}`;
                 el.style.color = res.ok ? 'var(--accent-green)' : 'var(--accent-red)';
-            } catch {
-                el.textContent = '❌ Offline';
+            } catch (err) {
+                el.textContent = '❌ ' + (navigator.onLine ? 'Error' : 'Offline');
+                el.title = getErrorMessage(err);
                 el.style.color = 'var(--accent-red)';
             }
         }
