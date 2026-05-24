@@ -180,8 +180,8 @@ namespace NET_Tracker.Services
                 // Apply sorting
                 query = ApplySorting(query, filter.SortBy);
 
-                // Run count and data fetch in parallel for better throughput
-                var countTask = query.CountAsync();
+                // Await count first to avoid InvalidOperationException on single DbContext
+                var totalCount = await query.CountAsync();
 
                 var skip = (filter.PageNumber - 1) * filter.PageSize;
 
@@ -225,8 +225,6 @@ namespace NET_Tracker.Services
                         .ToListAsync();
                 }
 
-                var totalCount = await countTask;
-
                 return (results, totalCount);
             }
             catch (Exception ex)
@@ -263,10 +261,10 @@ namespace NET_Tracker.Services
                     };
                 }
 
-                // Run independent aggregations in parallel to reduce round-trips
-                var successCountTask = baseQuery.CountAsync(x => x.Success);
+                // Run independent aggregations sequentially to avoid InvalidOperationException on single DbContext
+                var successfulRequests = await baseQuery.CountAsync(x => x.Success);
 
-                var aggregatesTask = baseQuery
+                var aggregates = await baseQuery
                     .GroupBy(x => 1)
                     .Select(g => new
                     {
@@ -281,36 +279,33 @@ namespace NET_Tracker.Services
                     .FirstOrDefaultAsync();
 
                 // *** CRITICAL PERF FIX for percentiles ***
-                // Instead of pulling ALL duration values into memory (O(N) data transfer),
-                // we approximate percentiles using ordered pagination — O(1) data transfer.
-                // For very large datasets (>10k rows) the difference is huge.
-                var sortedByDurationTask = baseQuery
+                var durations = await baseQuery
                     .OrderBy(x => x.DurationMs)
                     .Select(x => x.DurationMs)
                     .ToListAsync(); // Still needed for accurate percentiles — only the one column
 
-                var methodGroupTask = baseQuery
+                var methodGroup = await baseQuery
                     .GroupBy(x => x.Method ?? "UNKNOWN")
                     .Select(g => new { g.Key, Count = g.Count() })
                     .ToListAsync();
 
-                var statusGroupTask = baseQuery
+                var statusGroup = await baseQuery
                     .GroupBy(x => x.StatusCode)
                     .Select(g => new { g.Key, Count = g.Count() })
                     .ToListAsync();
 
-                var endpointGroupTask = baseQuery
+                var endpointGroup = await baseQuery
                     .GroupBy(x => x.Url ?? "unknown")
                     .Select(g => new { g.Key, Count = g.Count() })
                     .ToListAsync();
 
-                var contentTypeGroupTask = baseQuery
+                var contentTypeGroup = await baseQuery
                     .Where(x => x.ContentType != null && x.ContentType != "")
                     .GroupBy(x => x.ContentType)
                     .Select(g => new { g.Key, Count = g.Count() })
                     .ToListAsync();
 
-                var slowestTask = baseQuery
+                var slowestRequests = await baseQuery
                     .OrderByDescending(x => x.DurationMs)
                     .Take(10)
                     .Select(x => new HttpTransactionSummary
@@ -325,7 +320,7 @@ namespace NET_Tracker.Services
                     })
                     .ToListAsync();
 
-                var recentFailuresTask = baseQuery
+                var recentFailures = await baseQuery
                     .Where(x => !x.Success)
                     .OrderByDescending(x => x.Timestamp)
                     .Take(10)
@@ -341,7 +336,7 @@ namespace NET_Tracker.Services
                     })
                     .ToListAsync();
 
-                var endpointStatsTask = baseQuery
+                var mostAccessedEndpoints = await baseQuery
                     .GroupBy(x => x.Url ?? "unknown")
                     .Select(g => new EndpointStatistic
                     {
@@ -355,24 +350,6 @@ namespace NET_Tracker.Services
                     .OrderByDescending(x => x.RequestCount)
                     .Take(10)
                     .ToListAsync();
-
-                // Await all parallel tasks
-                await Task.WhenAll(
-                    successCountTask,
-                    aggregatesTask,
-                    sortedByDurationTask,
-                    methodGroupTask,
-                    statusGroupTask,
-                    endpointGroupTask,
-                    contentTypeGroupTask,
-                    slowestTask,
-                    recentFailuresTask,
-                    endpointStatsTask
-                );
-
-                var successfulRequests = successCountTask.Result;
-                var aggregates         = aggregatesTask.Result;
-                var durations          = sortedByDurationTask.Result; // already sorted
 
                 var stats = new HttpTransactionStatistics
                 {
@@ -393,13 +370,13 @@ namespace NET_Tracker.Services
                     TotalResponseBytes   = aggregates?.TotalResponseBytes ?? 0,
                     AverageRequestBytes  = (long)(aggregates?.AvgRequestBytes ?? 0),
                     AverageResponseBytes = (long)(aggregates?.AvgResponseBytes ?? 0),
-                    RequestsByMethod      = methodGroupTask.Result.ToDictionary(x => x.Key, x => x.Count),
-                    ResponsesByStatusCode = statusGroupTask.Result.ToDictionary(x => x.Key, x => x.Count),
-                    RequestsByEndpoint    = endpointGroupTask.Result.ToDictionary(x => x.Key, x => x.Count),
-                    RequestsByContentType = contentTypeGroupTask.Result.ToDictionary(x => x.Key!, x => x.Count),
-                    SlowestRequests       = slowestTask.Result,
-                    RecentFailures        = recentFailuresTask.Result,
-                    MostAccessedEndpoints = endpointStatsTask.Result
+                    RequestsByMethod      = methodGroup.ToDictionary(x => x.Key, x => x.Count),
+                    ResponsesByStatusCode = statusGroup.ToDictionary(x => x.Key, x => x.Count),
+                    RequestsByEndpoint    = endpointGroup.ToDictionary(x => x.Key, x => x.Count),
+                    RequestsByContentType = contentTypeGroup.ToDictionary(x => x.Key!, x => x.Count),
+                    SlowestRequests       = slowestRequests,
+                    RecentFailures        = recentFailures,
+                    MostAccessedEndpoints = mostAccessedEndpoints
                 };
 
                 return stats;
