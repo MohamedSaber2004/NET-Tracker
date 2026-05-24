@@ -81,7 +81,7 @@ app.Run();
 
 ### 4. Open the Dashboard
 
-Navigate to **`/Dashboard`** in your browser.
+Navigate to **`your-url`** in your browser.
 
 ---
 
