@@ -31,14 +31,6 @@ In modern distributed systems, understanding what's happening inside your HTTP p
 
 ---
 
-## 📸 Dashboard Preview
-
-| Transactions List | Request Details |
-| :--- | :--- |
-| ![Dashboard Overview](NET-Tracker/images/Screenshot%202026-05-24%20120033.png) | ![Details Modal](NET-Tracker/images/WhatsApp%20Image%202026-05-24%20at%201.01.58%20PM.jpeg) |
-
----
-
 ## 🚀 Quick Start (v3.0.3+)
 
 ### 1. Install Package
