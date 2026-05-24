@@ -9,7 +9,7 @@
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <IsPackable>true</IsPackable>
     <Title>Logger</Title>
-    <Version>2.0.4</Version>
+    <Version>2.0.5</Version>
     <Authors>Mohamed Saber</Authors>
     <Company>Mohamed Saber</Company>
     <Product>NET-Tracker</Product>

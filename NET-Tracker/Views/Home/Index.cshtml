@@ -8,6 +8,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="NET-Tracker: A lightweight, plug-and-play HTTP request/response tracking library for ASP.NET Core with a built-in real-time dashboard." />
     <title>@ViewData["Title"]</title>
     <!-- Modern Fonts -->
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
@@ -24,11 +25,12 @@
                     },
                     colors: {
                         dark: {
-                            bg: '#0f172a',
-                            card: '#1e293b',
-                            border: '#334155'
+                            bg: '#0a0f1e',
+                            card: '#111827',
+                            border: '#1f2937'
                         },
                         primary: {
+                            400: '#60a5fa',
                             500: '#3b82f6',
                             600: '#2563eb'
                         }
@@ -38,75 +40,201 @@
         }
     </script>
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
-            background-color: #0f172a;
+            background-color: #0a0f1e;
             color: #f8fafc;
             overflow-x: hidden;
+            font-family: 'Inter', sans-serif;
         }
-        
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0a0f1e; }
+        ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #374151; }
+
         .glass-card {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
         }
 
         .gradient-text {
-            background: linear-gradient(135deg, #38bdf8, #818cf8, #c084fc);
+            background: linear-gradient(135deg, #38bdf8, #818cf8, #c084fc, #f472b6);
+            background-size: 200% 200%;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            animation: gradient-shift 6s ease infinite;
+        }
+
+        @@keyframes gradient-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         .glow-effect {
             position: absolute;
-            width: 600px;
-            height: 600px;
-            background: radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, rgba(0,0,0,0) 70%);
-            top: -200px;
+            width: 900px;
+            height: 900px;
+            background: radial-gradient(circle, rgba(56, 189, 248, 0.12) 0%, rgba(129, 140, 248, 0.08) 35%, rgba(0,0,0,0) 70%);
+            top: -350px;
             left: 50%;
             transform: translateX(-50%);
-            z-index: -1;
+            z-index: 0;
+            pointer-events: none;
+            animation: pulse-glow 8s infinite alternate;
+        }
+
+        .glow-effect-2 {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(192, 132, 252, 0.08) 0%, rgba(0,0,0,0) 70%);
+            bottom: -200px;
+            right: -200px;
+            z-index: 0;
             pointer-events: none;
         }
 
-        /* Syntax Highlighting Base */
+        @@keyframes pulse-glow {
+            0% { opacity: 0.7; transform: translateX(-50%) scale(0.95); }
+            100% { opacity: 1; transform: translateX(-50%) scale(1.05); }
+        }
+        @@keyframes float-hero {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-12px); }
+        }
+
+        @@keyframes fade-up {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-fade-up {
+            animation: fade-up 0.8s ease-out forwards;
+        }
+
+        .animate-fade-up-delay-1 {
+            animation: fade-up 0.8s ease-out 0.15s forwards;
+            opacity: 0;
+        }
+
+        .animate-fade-up-delay-2 {
+            animation: fade-up 0.8s ease-out 0.3s forwards;
+            opacity: 0;
+        }
+
+        .animate-fade-up-delay-3 {
+            animation: fade-up 0.8s ease-out 0.45s forwards;
+            opacity: 0;
+        }
+
+        /* Syntax Highlighting */
         .code-block {
             background-color: #0d1117;
             border-radius: 0.75rem;
-            padding: 1.5rem;
+            padding: 1.25rem 1.5rem;
             overflow-x: auto;
-            border: 1px solid #30363d;
-            font-size: 0.9rem;
-            line-height: 1.5;
+            border: 1px solid rgba(48, 54, 61, 0.8);
+            font-size: 0.85rem;
+            line-height: 1.6;
+            position: relative;
+        }
+        .code-block::before {
+            content: '';
+            position: absolute;
+            top: 0.75rem;
+            left: 0.75rem;
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: #ff5f56;
+            box-shadow: 14px 0 0 #ffbd2e, 28px 0 0 #27c93f;
+        }
+        .code-block pre {
+            padding-top: 0.75rem;
         }
         .token-keyword { color: #ff7b72; }
         .token-method { color: #d2a8ff; }
         .token-string { color: #a5d6ff; }
         .token-class { color: #79c0ff; }
         .token-comment { color: #8b949e; font-style: italic; }
+        .token-number { color: #79c0ff; }
+
+        /* Timeline connector */
+        .timeline-dot {
+            position: absolute;
+            left: 50%;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            transition: all 0.4s ease;
+        }
+        .timeline-dot::after {
+            content: '';
+            position: absolute;
+            inset: 3px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        /* Stats counter */
+        .stat-card {
+            background: linear-gradient(135deg, rgba(17, 24, 39, 0.9), rgba(17, 24, 39, 0.6));
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        /* Navigation link hover */
+        .nav-link {
+            position: relative;
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #3b82f6, #818cf8);
+            transition: width 0.3s ease;
+        }
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        /* Smooth scroll */
+        html { scroll-behavior: smooth; }
     </style>
 </head>
-<body class="antialiased selection:bg-primary-500 selection:text-white relative">
+<body class="antialiased selection:bg-primary-500/30 selection:text-white relative">
     
     <div class="glow-effect"></div>
 
     <!-- Navigation -->
-    <nav class="border-b border-white/10 bg-dark-bg/80 backdrop-blur-md sticky top-0 z-50">
+    <nav class="border-b border-white/5 bg-[#0a0f1e]/90 backdrop-blur-xl sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16 items-center">
                 <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
                         <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                     </div>
                     <span class="font-bold text-xl tracking-tight">NET-Tracker</span>
+                    <span class="hidden sm:inline-flex text-xs font-medium px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">v2.0.5</span>
                 </div>
-                <div class="flex items-center gap-4">
-                    <a href="https://github.com/" target="_blank" class="text-slate-400 hover:text-white transition-colors">
-                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"></path></svg>
+                <div class="flex items-center gap-3 sm:gap-5">
+                    <a href="#features" class="nav-link text-slate-400 hover:text-white transition-colors text-sm font-medium hidden sm:block">Features</a>
+                    <a href="#integration" class="nav-link text-slate-400 hover:text-white transition-colors text-sm font-medium hidden sm:block">Integration</a>
+                    <a href="https://github.com/MohamedSaber2004/NET-Tracker" target="_blank" class="text-slate-400 hover:text-white transition-colors p-2 hover:bg-white/5 rounded-lg">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"></path></svg>
                     </a>
-                    <a asp-controller="Tracker" asp-action="Index" class="bg-primary-600 hover:bg-primary-500 text-white px-5 py-2 rounded-lg font-medium transition-all shadow-lg shadow-blue-500/25">
+                    <a asp-controller="Tracker" asp-action="Index" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-5 py-2 rounded-xl font-semibold text-sm transition-all shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:scale-[1.02]">
                         Open Dashboard
                     </a>
                 </div>
@@ -115,131 +243,394 @@
     </nav>
 
     <!-- Hero Section -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16 text-center">
-        <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight mb-6">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-28 pb-20 text-center relative z-10">
+        <div class="animate-fade-up">
+            <div class="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 text-blue-400 text-sm font-medium mb-10 shadow-lg shadow-blue-500/5">
+                <span class="relative flex h-2.5 w-2.5">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500"></span>
+                </span>
+                v2.0.4 — Now Available
+            </div>
+        </div>
+        <h1 class="text-5xl sm:text-6xl md:text-8xl font-extrabold tracking-tight mb-8 animate-fade-up-delay-1">
             The Ultimate <br/>
             <span class="gradient-text">HTTP Monitoring</span> <br/>
             for ASP.NET Core
         </h1>
-        <p class="mt-4 max-w-2xl text-lg md:text-xl text-slate-400 mx-auto mb-10">
-            Automatically intercept, log, mask, and analyze every HTTP request and response in your API. Built with OpenTelemetry, Resilience, and Zero-Overhead caching.
+        <p class="mt-4 max-w-2xl text-lg sm:text-xl md:text-2xl text-slate-400 mx-auto mb-14 leading-relaxed animate-fade-up-delay-2">
+            Automatically intercept, log, mask, and analyze every HTTP request and response in your API. Built with Zero-Overhead caching.
         </p>
         
-        <div class="flex justify-center gap-4">
-            <a href="#integration" class="bg-black text-white border border-white/20 px-8 py-3 rounded-xl font-bold text-lg hover:bg-white/10 transition-colors shadow-[0_0_20px_rgba(0,0,0,0.5)]">
+        <div class="flex flex-col sm:flex-row justify-center gap-4 sm:gap-5 animate-fade-up-delay-3">
+            <a href="#integration" class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-2xl font-bold text-lg hover:scale-[1.04] hover:shadow-[0_0_40px_rgba(59,130,246,0.4)] transition-all duration-300 active:scale-[0.98]">
                 Integration Guide
             </a>
-            <a asp-controller="Tracker" asp-action="Index" class="glass-card px-8 py-3 rounded-xl font-bold text-lg text-white hover:bg-white/10 transition-colors flex items-center gap-2">
+            <a asp-controller="Tracker" asp-action="Index" class="glass-card px-8 py-4 rounded-2xl font-bold text-lg text-white hover:bg-white/5 hover:scale-[1.04] hover:border-white/20 transition-all duration-300 flex items-center justify-center gap-3 group active:scale-[0.98]">
                 Live Demo 
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
             </a>
+        </div>
+
+        <!-- Quick Stats Row -->
+        <div class="flex flex-wrap justify-center gap-4 sm:gap-8 mt-16 sm:mt-20">
+            <div class="stat-card px-6 py-4 rounded-2xl text-center min-w-[140px]">
+                <div class="text-3xl font-extrabold text-white mb-1">0ms</div>
+                <div class="text-xs text-slate-500 uppercase tracking-wider font-medium">Overhead</div>
+            </div>
+            <div class="stat-card px-6 py-4 rounded-2xl text-center min-w-[140px]">
+                <div class="text-3xl font-extrabold text-white mb-1">.NET 8</div>
+                <div class="text-xs text-slate-500 uppercase tracking-wider font-medium">Compatible</div>
+            </div>
+            <div class="stat-card px-6 py-4 rounded-2xl text-center min-w-[140px]">
+                <div class="text-3xl font-extrabold text-white mb-1">2 Lines</div>
+                <div class="text-xs text-slate-500 uppercase tracking-wider font-medium">To Integrate</div>
+            </div>
+            <div class="stat-card px-6 py-4 rounded-2xl text-center min-w-[140px]">
+                <div class="text-3xl font-extrabold text-white mb-1">100%</div>
+                <div class="text-xs text-slate-500 uppercase tracking-wider font-medium">Open Source</div>
+            </div>
         </div>
     </main>
 
 
     <!-- Features Grid -->
-    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <section id="features" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative z-10">
+        <div class="text-center mb-14">
+            <h2 class="text-3xl md:text-5xl font-extrabold mb-4">Why <span class="gradient-text">NET-Tracker</span>?</h2>
+            <p class="text-slate-400 text-lg max-w-2xl mx-auto">Enterprise-grade features, zero-configuration setup</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
             <!-- Feature 1 -->
-            <div class="glass-card p-8 rounded-2xl">
-                <div class="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center mb-6">
-                    <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            <div class="glass-card p-8 rounded-3xl hover:-translate-y-2 hover:shadow-[0_20px_50px_-15px_rgba(59,130,246,0.25)] hover:border-blue-500/20 transition-all duration-500 cursor-default group overflow-hidden relative">
+                <div class="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div class="relative z-10">
+                    <div class="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center mb-6 border border-blue-500/15 group-hover:scale-110 group-hover:bg-blue-500/15 transition-all duration-500">
+                        <svg class="w-7 h-7 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 text-white group-hover:text-blue-400 transition-colors duration-300">Zero Overhead</h3>
+                    <p class="text-slate-400 leading-relaxed">Uses Channels and BackgroundServices to asynchronously queue logs. Your API responses are never delayed by database writes.</p>
                 </div>
-                <h3 class="text-xl font-bold mb-3">Zero Overhead</h3>
-                <p class="text-slate-400 leading-relaxed">Uses Channels and BackgroundServices to asynchronously queue logs. Your API responses are never delayed by database writes.</p>
             </div>
             <!-- Feature 2 -->
-            <div class="glass-card p-8 rounded-2xl">
-                <div class="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center mb-6">
-                    <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+            <div class="glass-card p-8 rounded-3xl hover:-translate-y-2 hover:shadow-[0_20px_50px_-15px_rgba(168,85,247,0.25)] hover:border-purple-500/20 transition-all duration-500 cursor-default group overflow-hidden relative">
+                <div class="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div class="relative z-10">
+                    <div class="w-14 h-14 bg-purple-500/10 rounded-2xl flex items-center justify-center mb-6 border border-purple-500/15 group-hover:scale-110 group-hover:bg-purple-500/15 transition-all duration-500">
+                        <svg class="w-7 h-7 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 text-white group-hover:text-purple-400 transition-colors duration-300">Data Privacy</h3>
+                    <p class="text-slate-400 leading-relaxed">Automatic masking of sensitive headers and JSON payloads (Passwords, Tokens, Credit Cards) before data ever hits the database.</p>
                 </div>
-                <h3 class="text-xl font-bold mb-3">Data Privacy</h3>
-                <p class="text-slate-400 leading-relaxed">Automatic masking of sensitive headers and JSON payloads (Passwords, Tokens, Credit Cards) before data ever hits the database.</p>
             </div>
             <!-- Feature 3 -->
-            <div class="glass-card p-8 rounded-2xl">
-                <div class="w-12 h-12 bg-green-500/10 rounded-xl flex items-center justify-center mb-6">
-                    <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
+            <div class="glass-card p-8 rounded-3xl hover:-translate-y-2 hover:shadow-[0_20px_50px_-15px_rgba(34,197,94,0.25)] hover:border-green-500/20 transition-all duration-500 cursor-default group overflow-hidden relative">
+                <div class="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div class="relative z-10">
+                    <div class="w-14 h-14 bg-green-500/10 rounded-2xl flex items-center justify-center mb-6 border border-green-500/15 group-hover:scale-110 group-hover:bg-green-500/15 transition-all duration-500">
+                        <svg class="w-7 h-7 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 text-white group-hover:text-green-400 transition-colors duration-300">1GB DB Friendly</h3>
+                    <p class="text-slate-400 leading-relaxed">Built-in auto-cleanup policies. Limit by days or enforce strict max-row limits to ensure your database never runs out of space.</p>
                 </div>
-                <h3 class="text-xl font-bold mb-3">1GB DB Friendly</h3>
-                <p class="text-slate-400 leading-relaxed">Built-in auto-cleanup policies. Limit by days or enforce strict max-row limits to ensure your database never runs out of space.</p>
+            </div>
+        </div>
+
+        <!-- Secondary features row -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mt-8">
+            <div class="glass-card p-6 rounded-2xl hover:border-cyan-500/20 transition-all duration-300 group">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-10 h-10 bg-cyan-500/10 rounded-xl flex items-center justify-center border border-cyan-500/15">
+                        <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    </div>
+                    <h4 class="font-semibold text-white group-hover:text-cyan-400 transition-colors">Real-time Dashboard</h4>
+                </div>
+                <p class="text-slate-500 text-sm leading-relaxed">Built-in UI with live statistics, charts, and request details.</p>
+            </div>
+            <div class="glass-card p-6 rounded-2xl hover:border-amber-500/20 transition-all duration-300 group">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center border border-amber-500/15">
+                        <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <h4 class="font-semibold text-white group-hover:text-amber-400 transition-colors">Auto Retention</h4>
+                </div>
+                <p class="text-slate-500 text-sm leading-relaxed">Configurable cleanup by days or max rows to keep.</p>
+            </div>
+            <div class="glass-card p-6 rounded-2xl hover:border-rose-500/20 transition-all duration-300 group">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-10 h-10 bg-rose-500/10 rounded-xl flex items-center justify-center border border-rose-500/15">
+                        <svg class="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                    <h4 class="font-semibold text-white group-hover:text-rose-400 transition-colors">Advanced Search</h4>
+                </div>
+                <p class="text-slate-500 text-sm leading-relaxed">Filter by method, status code, duration, IP, and more.</p>
+            </div>
+            <div class="glass-card p-6 rounded-2xl hover:border-emerald-500/20 transition-all duration-300 group">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center border border-emerald-500/15">
+                        <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <h4 class="font-semibold text-white group-hover:text-emerald-400 transition-colors">Health Checks</h4>
+                </div>
+                <p class="text-slate-500 text-sm leading-relaxed">Built-in health endpoint for monitoring service status.</p>
             </div>
         </div>
     </section>
+
 
     <!-- Integration Guide Section -->
-    <section id="integration" class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div class="text-center mb-12">
-            <h2 class="text-3xl md:text-4xl font-bold mb-4">How to Integrate</h2>
-            <p class="text-slate-400 text-lg">Adding NET-Tracker to your own systems is just 2 lines of code.</p>
+    <section id="integration" class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28 relative">
+        <div class="glow-effect-2"></div>
+        
+        <div class="text-center mb-16 sm:mb-20 relative z-10">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-sm font-medium mb-6">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                Step-by-Step Guide
+            </div>
+            <h2 class="text-4xl md:text-6xl font-extrabold mb-6 tracking-tight">NetTracker.Core<br/><span class="gradient-text">Integration Guide</span></h2>
+            <p class="text-slate-400 text-lg sm:text-xl max-w-3xl mx-auto leading-relaxed">Detailed instructions on how to integrate the NetTracker.Core library into your ASP.NET Core project.</p>
         </div>
 
-        <div class="space-y-8">
-            <!-- Step 1 -->
-            <div>
-                <h4 class="text-xl font-semibold mb-3 flex items-center gap-3">
-                    <span class="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-sm">1</span> 
-                    Register the Services
-                </h4>
-                <p class="text-slate-400 mb-3 text-sm">In your <code class="bg-white/10 px-2 py-1 rounded">Program.cs</code>, register the DbContext and the HTTP Logging decorators.</p>
-                <div class="code-block font-mono text-sm shadow-xl">
-<pre><span class="token-comment">// 1. Add your connection string</span>
-<span class="token-keyword">var</span> connectionString <span class="token-keyword">=</span> builder<span class="token-keyword">.</span>Configuration<span class="token-keyword">.</span><span class="token-method">GetConnectionString</span><span class="token-keyword">(</span><span class="token-string">"DefaultConnection"</span><span class="token-keyword">);</span>
+        <div class="space-y-10 sm:space-y-14 relative z-10">
 
-<span class="token-comment">// 2. Add NET-Tracker Services</span>
-builder<span class="token-keyword">.</span>Services<span class="token-keyword">.</span><span class="token-method">AddHttpRequestResponseLogging</span><span class="token-keyword">(</span>options <span class="token-keyword">=></span>
+            <!-- Step 1: Install NuGet Package -->
+            <div class="group">
+                <div class="flex items-start gap-5">
+                    <div class="flex-shrink-0 w-10 h-10 rounded-2xl bg-blue-500/15 border border-blue-500/25 flex items-center justify-center text-blue-400 font-bold text-sm group-hover:bg-blue-500/25 group-hover:scale-110 transition-all duration-300 shadow-lg shadow-blue-500/10">1</div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-xl sm:text-2xl font-bold text-white mb-2 group-hover:text-blue-400 transition-colors duration-300">Install the NuGet Package</h3>
+                        <p class="text-slate-400 mb-5 text-sm sm:text-base">Add the <code class="text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md text-sm">NetTracker.Core</code> package to your web API project.</p>
+                        <div class="code-block font-mono shadow-2xl group-hover:border-blue-500/30 transition-all duration-300">
+<pre>
+<span class="token-keyword">&lt;PackageReference</span> <span class="token-method">Include=</span><span class="token-string">"NetTracker.Core"</span> <span class="token-method">Version=</span><span class="token-string">"2.0.4"</span> <span class="token-keyword">/&gt;</span></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Register Services -->
+            <div class="group">
+                <div class="flex items-start gap-5">
+                    <div class="flex-shrink-0 w-10 h-10 rounded-2xl bg-purple-500/15 border border-purple-500/25 flex items-center justify-center text-purple-400 font-bold text-sm group-hover:bg-purple-500/25 group-hover:scale-110 transition-all duration-300 shadow-lg shadow-purple-500/10">2</div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-xl sm:text-2xl font-bold text-white mb-2 group-hover:text-purple-400 transition-colors duration-300">Register Services</h3>
+                        <p class="text-slate-400 mb-5 text-sm sm:text-base">In your <code class="text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-md text-sm">Program.cs</code> or <code class="text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-md text-sm">Startup.cs</code>, register the NetTracker services with the dependency injection container.</p>
+                        <div class="code-block font-mono shadow-2xl group-hover:border-purple-500/30 transition-all duration-300">
+<pre>
+<span class="token-keyword">using</span> NET_Tracker<span class="token-keyword">.</span>Extensions<span class="token-keyword">;</span>
+
+<span class="token-comment">// Add this before builder.Build();</span>
+builder<span class="token-keyword">.</span>Services<span class="token-keyword">.</span><span class="token-method">AddNetTracker</span><span class="token-keyword">(</span>builder<span class="token-keyword">.</span>Configuration<span class="token-keyword">);</span></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Database Initialization -->
+            <div class="group">
+                <div class="flex items-start gap-5">
+                    <div class="flex-shrink-0 w-10 h-10 rounded-2xl bg-pink-500/15 border border-pink-500/25 flex items-center justify-center text-pink-400 font-bold text-sm group-hover:bg-pink-500/25 group-hover:scale-110 transition-all duration-300 shadow-lg shadow-pink-500/10">3</div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-xl sm:text-2xl font-bold text-white mb-2 group-hover:text-pink-400 transition-colors duration-300">Database Initialization</h3>
+                        <p class="text-slate-400 mb-5 text-sm sm:text-base">NetTracker requires its own database tables (<code class="text-pink-400 bg-pink-500/10 px-2 py-0.5 rounded-md text-sm">HttpTransactions</code>) to store tracking data. Ensure these tables are created when the application starts.</p>
+                        <div class="code-block font-mono shadow-2xl group-hover:border-pink-500/30 transition-all duration-300">
+<pre>
+<span class="token-keyword">var</span> app <span class="token-keyword">=</span> builder<span class="token-keyword">.</span><span class="token-method">Build</span><span class="token-keyword">();</span>
+
+<span class="token-comment">// --- NetTracker Table Creation Workaround ---</span>
+<span class="token-keyword">using</span> <span class="token-keyword">(</span><span class="token-keyword">var</span> scope <span class="token-keyword">=</span> app<span class="token-keyword">.</span>Services<span class="token-keyword">.</span><span class="token-method">CreateScope</span><span class="token-keyword">())</span>
 <span class="token-keyword">{</span>
-    options<span class="token-keyword">.</span>LogBodyOnlyOnErrors <span class="token-keyword">=</span> <span class="token-keyword">true</span><span class="token-keyword">;</span>
-    options<span class="token-keyword">.</span>Retention<span class="token-keyword">.</span>MaxRowsToKeep <span class="token-keyword">=</span> <span class="token-keyword">10000</span><span class="token-keyword">;</span>
-<span class="token-keyword">});</span></pre>
+    <span class="token-keyword">var</span> trackerDb <span class="token-keyword">=</span> scope<span class="token-keyword">.</span>ServiceProvider
+        <span class="token-keyword">.</span><span class="token-method">GetRequiredService</span><span class="token-keyword">&lt;</span><span class="token-class">NET_Tracker.Data.ApplicationDbContext</span><span class="token-keyword">&gt;();</span>
+    <span class="token-keyword">var</span> dbCreator <span class="token-keyword">=</span> trackerDb<span class="token-keyword">.</span>Database
+        <span class="token-keyword">.</span><span class="token-method">GetService</span><span class="token-keyword">&lt;</span><span class="token-class">IRelationalDatabaseCreator</span><span class="token-keyword">&gt;();</span>
+    <span class="token-keyword">try</span>
+    <span class="token-keyword">{</span>
+        <span class="token-keyword">await</span> dbCreator<span class="token-keyword">.</span><span class="token-method">CreateTablesAsync</span><span class="token-keyword">();</span>
+    <span class="token-keyword">}</span>
+    <span class="token-keyword">catch</span> <span class="token-keyword">(</span><span class="token-class">Exception</span><span class="token-keyword">)</span> <span class="token-keyword">{</span> <span class="token-comment">/* Ignore if table already exists */</span> <span class="token-keyword">}</span>
+<span class="token-keyword">}</span></pre>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Step 2 -->
-            <div>
-                <h4 class="text-xl font-semibold mb-3 flex items-center gap-3">
-                    <span class="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-sm">2</span> 
-                    Add the Middleware
-                </h4>
-                <p class="text-slate-400 mb-3 text-sm">Enable the middleware in your request pipeline. Make sure to place it <strong>before</strong> your controllers.</p>
-                <div class="code-block font-mono text-sm shadow-xl">
-<pre><span class="token-keyword">var</span> app <span class="token-keyword">=</span> builder<span class="token-keyword">.</span><span class="token-method">Build</span><span class="token-keyword">();</span>
-
-<span class="token-comment">// 3. Use the Logging Middleware</span>
-app<span class="token-keyword">.</span><span class="token-method">UseHttpRequestResponseLogging</span><span class="token-keyword">();</span>
-
-app<span class="token-keyword">.</span><span class="token-method">MapControllers</span><span class="token-keyword">();</span>
-app<span class="token-keyword">.</span><span class="token-method">Run</span><span class="token-keyword">();</span></pre>
+            <!-- Step 4: Add the Middleware -->
+            <div class="group">
+                <div class="flex items-start gap-5">
+                    <div class="flex-shrink-0 w-10 h-10 rounded-2xl bg-sky-500/15 border border-sky-500/25 flex items-center justify-center text-sky-400 font-bold text-sm group-hover:bg-sky-500/25 group-hover:scale-110 transition-all duration-300 shadow-lg shadow-sky-500/10">4</div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-xl sm:text-2xl font-bold text-white mb-2 group-hover:text-sky-400 transition-colors duration-300">Add the Middleware</h3>
+                        <p class="text-slate-400 mb-5 text-sm sm:text-base">Add the NetTracker middleware to your request pipeline. Place it <strong class="text-white">early</strong> so it can intercept and track all incoming HTTP requests.</p>
+                        <div class="code-block font-mono shadow-2xl group-hover:border-sky-500/30 transition-all duration-300">
+<pre>
+<span class="token-comment">// Add this early in the pipeline</span>
+app<span class="token-keyword">.</span><span class="token-method">UseNetTracker</span><span class="token-keyword">(</span>app<span class="token-keyword">.</span>Configuration<span class="token-keyword">);</span></pre>
+                        </div>
+                    </div>
                 </div>
             </div>
-            
-            <!-- Step 3 -->
-            <div>
-                <h4 class="text-xl font-semibold mb-3 flex items-center gap-3">
-                    <span class="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-sm">3</span> 
-                    Configuration (appsettings.json)
-                </h4>
-                <p class="text-slate-400 mb-3 text-sm">Customize behavior directly from your configuration file.</p>
-                <div class="code-block font-mono text-sm shadow-xl">
-<pre><span class="token-keyword">"HttpRequestResponseLogging"</span><span class="token-keyword">: {</span>
+
+            <!-- Step 5: API Versioning -->
+            <div class="group">
+                <div class="flex items-start gap-5">
+                    <div class="flex-shrink-0 w-10 h-10 rounded-2xl bg-green-500/15 border border-green-500/25 flex items-center justify-center text-green-400 font-bold text-sm group-hover:bg-green-500/25 group-hover:scale-110 transition-all duration-300 shadow-lg shadow-green-500/10">5</div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-xl sm:text-2xl font-bold text-white mb-2 group-hover:text-green-400 transition-colors duration-300">API Versioning Compatibility <span class="text-sm font-normal text-slate-500">(Optional)</span></h3>
+                        <p class="text-slate-400 mb-5 text-sm sm:text-base">If your project uses API Versioning (e.g., <code class="text-green-400 bg-green-500/10 px-2 py-0.5 rounded-md text-sm">Asp.Versioning</code>), mark NetTracker controllers as API version neutral.</p>
+                        <div class="code-block font-mono shadow-2xl group-hover:border-green-500/30 transition-all duration-300">
+<pre>
+builder<span class="token-keyword">.</span>Services<span class="token-keyword">.</span><span class="token-method">AddApiVersioning</span><span class="token-keyword">(...)</span>
+    <span class="token-keyword">.</span><span class="token-method">AddMvc</span><span class="token-keyword">(</span>options <span class="token-keyword">=&gt;</span>
+    <span class="token-keyword">{</span>
+        options<span class="token-keyword">.</span>Conventions<span class="token-keyword">.</span><span class="token-method">Controller</span><span class="token-keyword">(</span>
+            <span class="token-keyword">typeof</span><span class="token-keyword">(</span><span class="token-class">TrackerController</span><span class="token-keyword">))</span>
+            <span class="token-keyword">.</span><span class="token-method">IsApiVersionNeutral</span><span class="token-keyword">();</span>
+        options<span class="token-keyword">.</span>Conventions<span class="token-keyword">.</span><span class="token-method">Controller</span><span class="token-keyword">(</span>
+            <span class="token-keyword">typeof</span><span class="token-keyword">(</span><span class="token-class">HealthController</span><span class="token-keyword">))</span>
+            <span class="token-keyword">.</span><span class="token-method">IsApiVersionNeutral</span><span class="token-keyword">();</span>
+        options<span class="token-keyword">.</span>Conventions<span class="token-keyword">.</span><span class="token-method">Controller</span><span class="token-keyword">(</span>
+            <span class="token-keyword">typeof</span><span class="token-keyword">(</span><span class="token-class">HomeController</span><span class="token-keyword">))</span>
+            <span class="token-keyword">.</span><span class="token-method">IsApiVersionNeutral</span><span class="token-keyword">();</span>
+        options<span class="token-keyword">.</span>Conventions<span class="token-keyword">.</span><span class="token-method">Controller</span><span class="token-keyword">(</span>
+            <span class="token-keyword">typeof</span><span class="token-keyword">(</span><span class="token-class">HttpTransactionsController</span><span class="token-keyword">))</span>
+            <span class="token-keyword">.</span><span class="token-method">IsApiVersionNeutral</span><span class="token-keyword">();</span>
+        options<span class="token-keyword">.</span>Conventions<span class="token-keyword">.</span><span class="token-method">Controller</span><span class="token-keyword">(</span>
+            <span class="token-keyword">typeof</span><span class="token-keyword">(</span><span class="token-class">StatisticsController</span><span class="token-keyword">))</span>
+            <span class="token-keyword">.</span><span class="token-method">IsApiVersionNeutral</span><span class="token-keyword">();</span>
+    <span class="token-keyword">});</span></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 6: Hide from Swagger -->
+            <div class="group">
+                <div class="flex items-start gap-5">
+                    <div class="flex-shrink-0 w-10 h-10 rounded-2xl bg-yellow-500/15 border border-yellow-500/25 flex items-center justify-center text-yellow-400 font-bold text-sm group-hover:bg-yellow-500/25 group-hover:scale-110 transition-all duration-300 shadow-lg shadow-yellow-500/10">6</div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-xl sm:text-2xl font-bold text-white mb-2 group-hover:text-yellow-400 transition-colors duration-300">Hiding from Swagger / OpenAPI <span class="text-sm font-normal text-slate-500">(Optional)</span></h3>
+                        <p class="text-slate-400 mb-5 text-sm sm:text-base">To prevent NetTracker endpoints from polluting your Swagger UI, hide them using a custom <code class="text-yellow-400 bg-yellow-500/10 px-2 py-0.5 rounded-md text-sm">IControllerModelConvention</code>.</p>
+                        <div class="code-block font-mono shadow-2xl group-hover:border-yellow-500/30 transition-all duration-300">
+<pre>
+<span class="token-comment">// 1. Add convention to controllers</span>
+builder<span class="token-keyword">.</span>Services<span class="token-keyword">.</span><span class="token-method">AddControllers</span><span class="token-keyword">(</span>options <span class="token-keyword">=&gt;</span>
+<span class="token-keyword">{</span>
+    options<span class="token-keyword">.</span>Conventions<span class="token-keyword">.</span><span class="token-method">Add</span><span class="token-keyword">(</span>
+        <span class="token-keyword">new</span> <span class="token-class">HideNetTrackerControllersConvention</span><span class="token-keyword">());</span>
+<span class="token-keyword">});</span>
+
+<span class="token-comment">// 2. Implementation of the convention</span>
+<span class="token-keyword">public class</span> <span class="token-class">HideNetTrackerControllersConvention</span>
+    <span class="token-keyword">:</span> <span class="token-class">IControllerModelConvention</span>
+<span class="token-keyword">{</span>
+    <span class="token-keyword">public void</span> <span class="token-method">Apply</span><span class="token-keyword">(</span><span class="token-class">ControllerModel</span> controller<span class="token-keyword">)</span>
+    <span class="token-keyword">{</span>
+        <span class="token-keyword">if</span> <span class="token-keyword">(</span>controller<span class="token-keyword">.</span>ControllerType
+            <span class="token-keyword">.</span>Assembly<span class="token-keyword">.</span>FullName<span class="token-keyword">?.</span><span class="token-method">Contains</span><span class="token-keyword">(</span>
+                <span class="token-string">"NetTracker"</span><span class="token-keyword">) ==</span> <span class="token-keyword">true)</span>
+        <span class="token-keyword">{</span>
+            controller<span class="token-keyword">.</span>ApiExplorer<span class="token-keyword">.</span>IsVisible
+                <span class="token-keyword">=</span> <span class="token-keyword">false;</span>
+            <span class="token-keyword">foreach</span> <span class="token-keyword">(var</span> action <span class="token-keyword">in</span>
+                controller<span class="token-keyword">.</span>Actions<span class="token-keyword">)</span>
+                action<span class="token-keyword">.</span>ApiExplorer<span class="token-keyword">.</span>IsVisible
+                    <span class="token-keyword">=</span> <span class="token-keyword">false;</span>
+        <span class="token-keyword">}</span>
+    <span class="token-keyword">}</span>
+<span class="token-keyword">}</span></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 7: Routing Configuration -->
+            <div class="group">
+                <div class="flex items-start gap-5">
+                    <div class="flex-shrink-0 w-10 h-10 rounded-2xl bg-orange-500/15 border border-orange-500/25 flex items-center justify-center text-orange-400 font-bold text-sm group-hover:bg-orange-500/25 group-hover:scale-110 transition-all duration-300 shadow-lg shadow-orange-500/10">7</div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-xl sm:text-2xl font-bold text-white mb-2 group-hover:text-orange-400 transition-colors duration-300">Routing Configuration</h3>
+                        <p class="text-slate-400 mb-5 text-sm sm:text-base">Ensure you have a default controller route mapped so that the NetTracker dashboard can be accessed easily (e.g., via <code class="text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded-md text-sm">/Tracker</code>).</p>
+                        <div class="code-block font-mono shadow-2xl group-hover:border-orange-500/30 transition-all duration-300">
+<pre>
+app<span class="token-keyword">.</span><span class="token-method">MapControllerRoute</span><span class="token-keyword">(</span>
+    name<span class="token-keyword">:</span> <span class="token-string">"default"</span><span class="token-keyword">,</span>
+    pattern<span class="token-keyword">:</span> <span class="token-string">"{controller=Tracker}/{action=Index}/{id?}"</span><span class="token-keyword">);</span></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 8: Configuration Settings -->
+            <div class="group">
+                <div class="flex items-start gap-5">
+                    <div class="flex-shrink-0 w-10 h-10 rounded-2xl bg-teal-500/15 border border-teal-500/25 flex items-center justify-center text-teal-400 font-bold text-sm group-hover:bg-teal-500/25 group-hover:scale-110 transition-all duration-300 shadow-lg shadow-teal-500/10">8</div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-xl sm:text-2xl font-bold text-white mb-2 group-hover:text-teal-400 transition-colors duration-300">Configuration Settings</h3>
+                        <p class="text-slate-400 mb-5 text-sm sm:text-base">Add the required NetTracker configuration values into your <code class="text-teal-400 bg-teal-500/10 px-2 py-0.5 rounded-md text-sm">appsettings.json</code> file. <code class="text-teal-400 bg-teal-500/10 px-2 py-0.5 rounded-md text-sm">AddNetTracker</code> and <code class="text-teal-400 bg-teal-500/10 px-2 py-0.5 rounded-md text-sm">UseNetTracker</code> read from standard configuration sources.</p>
+                        <div class="code-block font-mono shadow-2xl group-hover:border-teal-500/30 transition-all duration-300">
+<pre>
+<span class="token-keyword">"HttpRequestResponseLogging"</span><span class="token-keyword">: {</span>
   <span class="token-string">"Enabled"</span><span class="token-keyword">:</span> <span class="token-keyword">true</span><span class="token-keyword">,</span>
   <span class="token-string">"LogBodyOnlyOnErrors"</span><span class="token-keyword">:</span> <span class="token-keyword">true</span><span class="token-keyword">,</span>
+  <span class="token-string">"LogSensitiveData"</span><span class="token-keyword">:</span> <span class="token-keyword">false</span><span class="token-keyword">,</span>
+  <span class="token-string">"MaxBodySize"</span><span class="token-keyword">:</span> <span class="token-number">32768</span><span class="token-keyword">,</span>
   <span class="token-string">"ExcludePaths"</span><span class="token-keyword">: [</span>
-    <span class="token-string">"/health"</span><span class="token-keyword">,</span> <span class="token-string">"/swagger"</span>
+    <span class="token-string">"/health"</span><span class="token-keyword">,</span> <span class="token-string">"/swagger"</span><span class="token-keyword">,</span> <span class="token-string">"/Tracker"</span>
   <span class="token-keyword">],</span>
   <span class="token-string">"Retention"</span><span class="token-keyword">: {</span>
-    <span class="token-string">"DaysToKeep"</span><span class="token-keyword">:</span> <span class="token-keyword">2</span><span class="token-keyword">,</span>
-    <span class="token-string">"MaxRowsToKeep"</span><span class="token-keyword">:</span> <span class="token-keyword">10000</span>
+    <span class="token-string">"DaysToKeep"</span><span class="token-keyword">:</span> <span class="token-number">7</span><span class="token-keyword">,</span>
+    <span class="token-string">"MaxRowsToKeep"</span><span class="token-keyword">:</span> <span class="token-number">50000</span><span class="token-keyword">,</span>
+    <span class="token-string">"CleanupIntervalHours"</span><span class="token-keyword">:</span> <span class="token-number">6</span>
   <span class="token-keyword">}</span>
 <span class="token-keyword">}</span></pre>
+                        </div>
+                    </div>
                 </div>
             </div>
 
         </div>
     </section>
 
-    <footer class="border-t border-white/10 mt-20 py-8 text-center text-slate-500 text-sm">
-        <p>Built with ❤️ for the .NET Open Source Community. Fully compatible with .NET 8.</p>
+    <!-- CTA Section -->
+    <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 relative z-10">
+        <div class="glass-card p-10 sm:p-14 rounded-3xl text-center relative overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5"></div>
+            <div class="relative z-10">
+                <h2 class="text-3xl sm:text-4xl font-extrabold mb-4">Ready to start tracking?</h2>
+                <p class="text-slate-400 text-lg mb-8 max-w-xl mx-auto">Add NET-Tracker to your project in minutes and get full visibility into your HTTP traffic.</p>
+                <div class="flex flex-col sm:flex-row justify-center gap-4">
+                    <a asp-controller="Tracker" asp-action="Index" class="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-2xl font-bold text-lg hover:scale-[1.04] hover:shadow-[0_0_40px_rgba(59,130,246,0.4)] transition-all duration-300 inline-flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        Open Dashboard
+                    </a>
+                    <a href="https://github.com/MohamedSaber2004/NET-Tracker" target="_blank" class="glass-card px-8 py-4 rounded-2xl font-bold text-lg text-white hover:bg-white/5 hover:border-white/20 transition-all duration-300 inline-flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"></path></svg>
+                        View on GitHub
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/5 py-10 relative z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    </div>
+                    <span class="text-slate-500 text-sm">Built with ❤️ by <a href="https://github.com/MohamedSaber2004" target="_blank" class="text-slate-400 hover:text-white transition-colors">Mohamed Saber</a></span>
+                </div>
+                <div class="flex items-center gap-6">
+                    <span class="text-slate-600 text-sm">Fully compatible with .NET 8</span>
+                    <a href="https://github.com/MohamedSaber2004/NET-Tracker" target="_blank" class="text-slate-500 hover:text-white transition-colors">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"></path></svg>
+                    </a>
+                </div>
+            </div>
+        </div>
     </footer>
 
 </body>
