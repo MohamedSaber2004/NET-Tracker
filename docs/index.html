@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NET-Tracker | High-Performance HTTP Observability</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .gradient-text {
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans">
+
+    <!-- Hero Section -->
+    <header class="container mx-auto px-6 py-16 text-center">
+        <div class="inline-block px-4 py-1.5 mb-6 text-sm font-semibold tracking-wide uppercase bg-blue-500/10 text-blue-400 rounded-full border border-blue-500/20">
+            v1.0.0 Now Available
+        </div>
+        <h1 class="text-5xl md:text-7xl font-extrabold mb-6">
+            Track Every Request. <br/>
+            <span class="gradient-text">Zero Latency.</span>
+        </h1>
+        <p class="text-xl text-slate-400 max-w-2xl mx-auto mb-10">
+            The high-performance HTTP tracking library for ASP.NET Core 8.0. Built for developers who refuse to sacrifice speed for observability.
+        </p>
+        <div class="flex flex-col sm:flex-row justify-center gap-4">
+            <a href="https://github.com" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg font-bold transition-all shadow-lg shadow-blue-500/20">Get Started</a>
+            <code class="bg-slate-800 border border-slate-700 px-6 py-4 rounded-lg text-blue-300 font-mono">dotnet add package NET-Tracker</code>
+        </div>
+    </header>
+
+    <!-- Features Grid -->
+    <section class="container mx-auto px-6 py-20">
+        <div class="grid md:grid-cols-3 gap-8">
+            <!-- Isolation Feature -->
+            <div class="bg-slate-800/50 border border-slate-700 p-8 rounded-2xl hover:border-blue-500/50 transition-colors">
+                <div class="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-lg flex items-center justify-center mb-6 text-2xl">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-3">Architectural Isolation</h3>
+                <p class="text-slate-400">Powered by <code>System.Threading.Channels</code>. Logging runs in a dedicated background pipe, ensuring your HTTP pipeline remains 100% non-blocking.</p>
+            </div>
+
+            <!-- Resilience Feature -->
+            <div class="bg-slate-800/50 border border-slate-700 p-8 rounded-2xl hover:border-purple-500/50 transition-colors">
+                <div class="w-12 h-12 bg-purple-500/20 text-purple-400 rounded-lg flex items-center justify-center mb-6 text-2xl">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-3">Circuit Breaker Protection</h3>
+                <p class="text-slate-400">If your database fails, NET-Tracker detaches automatically. Your main application stays healthy while it retries in the background.</p>
+            </div>
+
+            <!-- Privacy Feature -->
+            <div class="bg-slate-800/50 border border-slate-700 p-8 rounded-2xl hover:border-green-500/50 transition-colors">
+                <div class="w-12 h-12 bg-green-500/20 text-green-400 rounded-lg flex items-center justify-center mb-6 text-2xl">
+                    <i class="fas fa-user-secret"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-3">Auto PII Masking</h3>
+                <p class="text-slate-400">Zero-config protection. Automatically identifies and masks passwords, tokens, and secrets in JSON bodies before they ever hit the disk.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Code Block -->
+    <section class="bg-slate-950 py-20">
+        <div class="container mx-auto px-6">
+            <div class="max-w-3xl mx-auto">
+                <h2 class="text-3xl font-bold mb-8 text-center">Setup in 60 Seconds</h2>
+                <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
+                    <div class="bg-slate-800 px-4 py-2 text-xs text-slate-500 font-mono">Program.cs</div>
+                    <pre class="p-6 text-sm md:text-base font-mono leading-relaxed overflow-x-auto text-blue-300">
+<span class="text-slate-500">// Add the tracking services</span>
+builder.Services.AddHttpTracker(options => {
+    options.StorageType = <span class="text-green-400">"SqlServer"</span>;
+    options.LogSensitiveData = <span class="text-red-400">false</span>;
+});
+
+<span class="text-slate-500">// Enable the middleware</span>
+app.UseHttpTracker();</pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="container mx-auto px-6 py-12 text-center text-slate-500">
+        <p>&copy; 2026 NET-Tracker. Open Source under MIT License.</p>
+    </footer>
+
+</body>
+</html>
